@@ -1,0 +1,51 @@
+# Published contents are governed by the "files" allowlist (dist/, bin/) in package.json;
+# README.md, LICENSE and package.json are force-included by npm. This denylist is
+# defense-in-depth — it also strips build artifacts that must never ship.
+
+# Build artifacts that bloat the package
+*.map
+*.tsbuildinfo
+
+# Source, tests & tooling
+node_modules/
+src/
+examples/
+tests/
+test*/
+scripts/
+docs/
+coverage/
+packages/
+media/
+
+# Configs & lockfiles
+.*
+!.npmignore
+*.config.*
+tsup.config.ts
+tsconfig*.json
+vitest.config.ts
+*.log
+pnpm-lock*
+yarn.lock
+package-lock*
+bun.lock
+pnpm-workspace.yaml
+
+# Repo docs/meta (README + LICENSE stay; npm force-includes them)
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+MIGRATION.md
+REFACTOR_SUMMARY.md
+
+# AI & internal tooling
+.session/
+.temp/
+.planning/
+.gsd/
+.gemini/
+.agent/
+.kelar/
+AGENTS.md
+GEMINI.md

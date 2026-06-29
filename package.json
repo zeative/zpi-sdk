@@ -1,0 +1,52 @@
+{
+  "name": "zpi-sdk",
+  "version": "0.0.0",
+  "description": "Universal, zero-dependency TypeScript SDK for the Zest API (Zapi) scraper platform.",
+  "license": "MIT",
+  "author": "zaadevofc",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "bin": {
+    "zpi": "./bin/zpi.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.mjs",
+      "require": "./dist/mcp.cjs"
+    },
+    "./codegen": {
+      "types": "./dist/codegen.d.ts",
+      "import": "./dist/codegen.mjs",
+      "require": "./dist/codegen.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "tsup",
+    "smoke:esm": "node scripts/smoke-esm.mjs",
+    "smoke:cjs": "node scripts/smoke-cjs.cjs",
+    "smoke": "npm run smoke:esm && npm run smoke:cjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@typescript/native-preview": "7.0.0-dev.20260629.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
