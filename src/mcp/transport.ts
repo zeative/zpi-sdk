@@ -5,6 +5,7 @@
 
 import type { ResolvedConfig } from "../core/config";
 import { fromResponse, ZpiMcpError } from "../core/errors";
+import { createSseParser } from "../core/sse";
 
 // MCP protocol version we advertise. The stateless server tolerates a recent
 // stable date string and echoes its own negotiated version back.
@@ -47,6 +48,72 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
+// Shared JSON-RPC outcome mapper: both the application/json and the
+// text/event-stream branches funnel a single selected message here so an
+// `error` -> ZpiMcpError mapping is byte-identical regardless of framing.
+function resolveJsonRpc(body: JsonRpcResponse | undefined): unknown {
+  if (!isObj(body)) return undefined;
+  if (isObj(body.error)) {
+    const e = body.error as JsonRpcError;
+    throw new ZpiMcpError(
+      typeof e.message === "string" ? e.message : "MCP JSON-RPC error",
+      { code: e.code, data: e.data, raw: body.error }
+    );
+  }
+  return body.result;
+}
+
+// Pick the response message: prefer the one whose id matches the request id;
+// otherwise the last message carrying a result/error (T-07-04: hostile/extra
+// frames are ignored — only an id-match or the final result/error is honored).
+function selectMessage(
+  messages: JsonRpcResponse[],
+  requestId?: number
+): JsonRpcResponse | undefined {
+  if (requestId !== undefined) {
+    const matched = messages.find((m) => m.id === requestId);
+    if (matched) return matched;
+  }
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (isObj(m) && ("result" in m || "error" in m)) return m;
+  }
+  return messages[messages.length - 1];
+}
+
+// Parse a text/event-stream body into JSON-RPC messages by reusing the vendored
+// SSE parser. Each `data:` frame carries one JSON-RPC message; non-JSON frames
+// are skipped best-effort (T-07-04).
+async function readSseMessages(res: Response): Promise<JsonRpcResponse[]> {
+  const reader = res.body?.getReader();
+  if (!reader) return [];
+  const decoder = new globalThis.TextDecoder();
+  const parser = createSseParser();
+  const events: { data: string }[] = [];
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      for (const ev of parser.push(decoder.decode(value, { stream: true }))) {
+        events.push(ev);
+      }
+    }
+  }
+  for (const ev of parser.flush()) events.push(ev);
+
+  const messages: JsonRpcResponse[] = [];
+  for (const ev of events) {
+    try {
+      const parsed = JSON.parse(ev.data);
+      if (isObj(parsed)) messages.push(parsed as JsonRpcResponse);
+    } catch {
+      // skip non-JSON frame
+    }
+  }
+  return messages;
+}
+
 // Send one JSON-RPC message. For requests (with id) returns `{ result, sessionId }`;
 // for notifications (no id) the server replies 202/empty — returns undefined result.
 export async function rpcRequest(
@@ -84,21 +151,14 @@ export async function rpcRequest(
   const ct = res.headers.get("content-type") ?? "";
 
   if (ct.includes("text/event-stream")) {
-    // TODO(Plan 02): parse SSE frames via src/mcp/sse.ts.
-    throw new Error("MCP SSE response path not implemented until Plan 02");
+    const messages = await readSseMessages(res);
+    const selected = selectMessage(messages, message.id);
+    return { result: resolveJsonRpc(selected), sessionId };
   }
 
   if (ct.includes("application/json")) {
     const body = (await readJson(res)) as JsonRpcResponse | undefined;
-    if (!isObj(body)) return { result: undefined, sessionId };
-    if (isObj(body.error)) {
-      const e = body.error as JsonRpcError;
-      throw new ZpiMcpError(
-        typeof e.message === "string" ? e.message : "MCP JSON-RPC error",
-        { code: e.code, data: e.data, raw: body.error }
-      );
-    }
-    return { result: body.result, sessionId };
+    return { result: resolveJsonRpc(body), sessionId };
   }
 
   // Unknown 2xx content-type with a body we can't classify.
