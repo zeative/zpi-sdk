@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck (tsgo, fast)
+        run: npm run typecheck
+
+      - name: Typecheck (tsc, legacy backstop)
+        run: npm run typecheck:legacy
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke (ESM + CJS)
+        run: npm run smoke
+
+      - name: Lint publish (publint)
+        run: npm run lint:publish
+
+      - name: Lint types (attw)
+        run: npm run lint:types
+
+      # Plan 03 adds: dist:scan + size-limit

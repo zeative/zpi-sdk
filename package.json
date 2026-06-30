@@ -5,6 +5,7 @@
   "license": "MIT",
   "author": "zaadevofc",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -17,19 +18,34 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./mcp": {
-      "types": "./dist/mcp.d.ts",
-      "import": "./dist/mcp.mjs",
-      "require": "./dist/mcp.cjs"
+      "import": {
+        "types": "./dist/mcp.d.ts",
+        "default": "./dist/mcp.mjs"
+      },
+      "require": {
+        "types": "./dist/mcp.d.cts",
+        "default": "./dist/mcp.cjs"
+      }
     },
     "./codegen": {
-      "types": "./dist/codegen.d.ts",
-      "import": "./dist/codegen.mjs",
-      "require": "./dist/codegen.cjs"
+      "import": {
+        "types": "./dist/codegen.d.ts",
+        "default": "./dist/codegen.mjs"
+      },
+      "require": {
+        "types": "./dist/codegen.d.cts",
+        "default": "./dist/codegen.cjs"
+      }
     }
   },
   "scripts": {
@@ -37,14 +53,21 @@
     "prepublishOnly": "tsup",
     "smoke:esm": "node scripts/smoke-esm.mjs",
     "smoke:cjs": "node scripts/smoke-cjs.cjs",
-    "smoke": "npm run smoke:esm && npm run smoke:cjs"
+    "smoke": "npm run smoke:esm && npm run smoke:cjs",
+    "typecheck": "tsgo --noEmit",
+    "typecheck:legacy": "tsc --noEmit",
+    "lint:publish": "publint",
+    "lint:types": "attw --pack . --profile node16",
+    "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@types/node": "^24.10.1",
     "@typescript/native-preview": "7.0.0-dev.20260629.1",
+    "publint": "^0.3.14",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
