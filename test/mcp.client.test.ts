@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveConfig } from "../src/core/config";
 import { ZpiMcpError } from "../src/core/errors";
 import { createMcpClient } from "../src/mcp/client";
 
@@ -36,8 +35,7 @@ describe("createMcpClient handshake + listTools", () => {
       new Response(null, { status: 202 }),
       jsonRpcResponse({ jsonrpc: "2.0", id: 2, result: { tools } }),
     ]);
-    const config = resolveConfig({ apiKey: "k", fetch: f });
-    const client = createMcpClient(config);
+    const client = createMcpClient({ apiKey: "k", fetch: f });
 
     const out = await client.listTools();
 
@@ -61,7 +59,7 @@ describe("createMcpClient handshake + listTools", () => {
       jsonRpcResponse({ jsonrpc: "2.0", id: 2, result: { tools: [] } }),
       jsonRpcResponse({ jsonrpc: "2.0", id: 3, result: { tools: [] } }),
     ]);
-    const client = createMcpClient(resolveConfig({ apiKey: "k", fetch: f }));
+    const client = createMcpClient({ apiKey: "k", fetch: f });
     await client.listTools();
     await client.listTools();
     // initialize + initialized + 2x tools/list = 4 calls (no second handshake).
@@ -76,7 +74,7 @@ describe("createMcpClient callTool", () => {
       new Response(null, { status: 202 }),
       jsonRpcResponse({ jsonrpc: "2.0", id: 2, result: { content: [{ type: "text", text: "ok" }] } }),
     ]);
-    const client = createMcpClient(resolveConfig({ apiKey: "k", fetch: f }));
+    const client = createMcpClient({ apiKey: "k", fetch: f });
 
     const out = await client.callTool("scrape", { url: "x" });
 
@@ -95,7 +93,7 @@ describe("createMcpClient JSON-RPC error", () => {
       new Response(null, { status: 202 }),
       jsonRpcResponse({ jsonrpc: "2.0", id: 2, error: rpcError }),
     ]);
-    const client = createMcpClient(resolveConfig({ apiKey: "k", fetch: f }));
+    const client = createMcpClient({ apiKey: "k", fetch: f });
 
     const err = await client.listTools().then(
       () => null,

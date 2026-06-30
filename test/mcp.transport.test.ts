@@ -53,29 +53,25 @@ describe("mcp transport — SSE-framed responses", () => {
     ];
 
     // JSON path
-    const jsonClient = createMcpClient(
-      resolveConfig({
-        apiKey: API_KEY,
-        fetch: sequencedFetch([
-          jsonResponse({ jsonrpc: "2.0", id: 1, result: {} }),
-          new Response(null, { status: 202 }),
-          jsonResponse({ jsonrpc: "2.0", id: 2, result: { tools } }),
-        ]) as unknown as typeof globalThis.fetch,
-      })
-    );
+    const jsonClient = createMcpClient({
+      apiKey: API_KEY,
+      fetch: sequencedFetch([
+        jsonResponse({ jsonrpc: "2.0", id: 1, result: {} }),
+        new Response(null, { status: 202 }),
+        jsonResponse({ jsonrpc: "2.0", id: 2, result: { tools } }),
+      ]) as unknown as typeof globalThis.fetch,
+    });
     const jsonTools = await jsonClient.listTools();
 
     // SSE path — same logical messages, event-stream framing.
-    const sseClient = createMcpClient(
-      resolveConfig({
-        apiKey: API_KEY,
-        fetch: sequencedFetch([
-          sseResponse([{ jsonrpc: "2.0", id: 1, result: {} }]),
-          new Response(null, { status: 202 }),
-          sseResponse([{ jsonrpc: "2.0", id: 2, result: { tools } }]),
-        ]) as unknown as typeof globalThis.fetch,
-      })
-    );
+    const sseClient = createMcpClient({
+      apiKey: API_KEY,
+      fetch: sequencedFetch([
+        sseResponse([{ jsonrpc: "2.0", id: 1, result: {} }]),
+        new Response(null, { status: 202 }),
+        sseResponse([{ jsonrpc: "2.0", id: 2, result: { tools } }]),
+      ]) as unknown as typeof globalThis.fetch,
+    });
     const sseTools = await sseClient.listTools();
 
     expect(sseTools).toEqual(jsonTools);

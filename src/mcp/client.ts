@@ -2,7 +2,7 @@
 // generic listTools/callTool over the JSON-RPC transport. Generic by design —
 // lists whatever tools the server reports (no hardcoded set).
 
-import type { ResolvedConfig } from "../core/config";
+import { type ZpiClientOptions, resolveConfig } from "../core/config";
 import { type JsonRpcRequest, PROTOCOL_VERSION, rpcRequest } from "./transport";
 
 // Kept local so `./mcp` never imports `.` (the lean root entry).
@@ -23,7 +23,8 @@ function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
-export function createMcpClient(config: ResolvedConfig): McpClient {
+export function createMcpClient(options: ZpiClientOptions): McpClient {
+  const config = resolveConfig(options);
   let sessionId: string | undefined;
   let nextId = 1;
   let initPromise: Promise<void> | undefined;
