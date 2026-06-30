@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 import { ZpiClient } from "../src/client";
 import type { StreamEvent } from "../src/resources/stream";
 import type { SseEvent } from "../src/core/sse";
+import {
+  ZpiBulkCapError,
+  ZpiBulkNotEnabledError,
+  ZpiError,
+  ZpiIdempotencyError,
+} from "../src/index";
+import type {
+  BulkItem,
+  BulkItemStatus,
+  BulkJobData,
+  BulkJobStatus,
+  BulkSubmitOpts,
+  BulkWaitOpts,
+} from "../src/index";
 
 // Streamed Response from chunks (mirrors test/stream.test.ts helper).
 function fakeStreamFetch(chunks: string[], contentType: string) {
@@ -70,6 +84,47 @@ describe("ZpiClient.catalog", () => {
     });
     const out = await client.catalog.schema("acme", "run");
     expect(out.fields[0].name).toBe("mode");
+  });
+});
+
+describe("ZpiClient.bulk", () => {
+  it("exposes submit + status as functions off the client", () => {
+    const client = new ZpiClient({ apiKey: "sekret" });
+    expect(typeof client.bulk.submit).toBe("function");
+    expect(typeof client.bulk.status).toBe("function");
+  });
+});
+
+describe("package entry bulk surface", () => {
+  it("re-exports the 3 new error subclasses as ZpiError subclasses", () => {
+    expect(
+      new ZpiBulkNotEnabledError({ error: { code: "bulk_not_enabled" } }, 403)
+    ).toBeInstanceOf(ZpiError);
+    const cap = new ZpiBulkCapError(
+      { error: { code: "bulk_cap_exceeded" }, cap: 10, submitted: 20 },
+      400
+    );
+    expect(cap).toBeInstanceOf(ZpiError);
+    expect(cap.cap).toBe(10);
+    expect(cap.submitted).toBe(20);
+    expect(
+      new ZpiIdempotencyError({ error: { code: "idempotency_key_reuse" } }, 422)
+    ).toBeInstanceOf(ZpiError);
+  });
+
+  it("re-exports the public bulk types (type-only import compiles)", () => {
+    // Type-level assertion: these compile only if the types are exported.
+    const item: BulkItem = { url: "https://example.com" };
+    const job: BulkJobStatus = "COMPLETED";
+    const istat: BulkItemStatus = "SUCCEEDED";
+    const sub: BulkSubmitOpts = {};
+    const wait: BulkWaitOpts = {};
+    const data: BulkJobData = { jobId: "j", status: job, total: 1 };
+    expect(item.url).toBe("https://example.com");
+    expect(istat).toBe("SUCCEEDED");
+    expect(sub).toBeDefined();
+    expect(wait).toBeDefined();
+    expect(data.jobId).toBe("j");
   });
 });
 

@@ -7,6 +7,15 @@ interface ZpiClientOptions {
     maxRetries?: number;
     baseRetryDelayMs?: number;
 }
+interface ResolvedConfig {
+    apiKey: string;
+    baseURL: string;
+    defaultHeaders: Record<string, string>;
+    fetch: typeof globalThis.fetch;
+    timeoutMs: number;
+    maxRetries: number;
+    baseRetryDelayMs: number;
+}
 
 interface RunOpts {
     method?: "GET" | "POST";
@@ -125,9 +134,68 @@ interface Catalog {
     }>;
 }
 
+type BulkJobStatus = "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
+type BulkItemStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+interface BulkItem {
+    url?: string;
+    params?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+interface BulkItemResult {
+    url?: string;
+    params?: Record<string, unknown>;
+    status: BulkItemStatus;
+    data?: unknown;
+    error?: unknown;
+    latencyMs?: number;
+}
+interface BulkJobData {
+    jobId: string;
+    status: BulkJobStatus;
+    total: number;
+    succeeded?: number;
+    failed?: number;
+    scraperSlug?: string;
+    endpointSlug?: string;
+    createdAt?: string;
+    startedAt?: string;
+    completedAt?: string;
+    pollUrl?: string;
+    items?: BulkItemResult[];
+}
+interface BulkSubmitOpts {
+    idempotencyKey?: string;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    headers?: Record<string, string>;
+}
+interface BulkWaitOpts {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    pollIntervalMs?: number;
+    onProgress?: (job: BulkJobData) => void;
+}
+declare class BulkJob {
+    readonly jobId: string;
+    readonly pollUrl?: string;
+    readonly status?: BulkJobStatus;
+    readonly total?: number;
+    private readonly config;
+    constructor(config: ResolvedConfig, body: Record<string, unknown>);
+    wait(opts?: BulkWaitOpts): Promise<BulkJobData>;
+}
+interface Bulk {
+    submit(projectKey: string, endpoint: string, items: BulkItem[], opts?: BulkSubmitOpts): Promise<BulkJob>;
+    status(jobId: string, opts?: {
+        signal?: AbortSignal;
+        timeoutMs?: number;
+    }): Promise<BulkJobData>;
+}
+
 declare class ZpiClient {
     #private;
     readonly catalog: Catalog;
+    readonly bulk: Bulk;
     constructor(options: ZpiClientOptions);
     run<T = unknown>(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: RunOpts): Promise<T>;
     stream(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: StreamOpts): AsyncIterable<StreamEvent>;
@@ -176,7 +244,19 @@ declare class ZpiRateLimitError extends ZpiError {
     window?: "minute" | "month" | string;
     retryAfterSec?: number;
     retryAfter?: number;
+    requested?: number;
     constructor(body: unknown, status: number, headers: HeaderBag, requestId?: string);
+}
+declare class ZpiBulkNotEnabledError extends ZpiError {
+    constructor(body: unknown, status: number, requestId?: string);
+}
+declare class ZpiBulkCapError extends ZpiError {
+    cap?: number;
+    submitted?: number;
+    constructor(body: unknown, status: number, requestId?: string);
+}
+declare class ZpiIdempotencyError extends ZpiError {
+    constructor(body: unknown, status: number, requestId?: string);
 }
 declare class ZpiServerError extends ZpiError {
     constructor(body: unknown, status: number, requestId?: string);
@@ -196,4 +276,4 @@ declare class ZpiAbortError extends ZpiError {
 
 declare const VERSION: "0.0.0";
 
-export { type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiAbortError, ZpiAuthError, ZpiClient, type ZpiClientOptions, ZpiDisabledError, ZpiError, ZpiExecError, ZpiInvalidParamsError, ZpiMethodNotAllowedError, ZpiNetworkError, ZpiNotFoundError, ZpiPlanGateError, ZpiRateLimitError, ZpiServerError, ZpiTimeoutError };
+export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiAbortError, ZpiAuthError, ZpiBulkCapError, ZpiBulkNotEnabledError, ZpiClient, type ZpiClientOptions, ZpiDisabledError, ZpiError, ZpiExecError, ZpiIdempotencyError, ZpiInvalidParamsError, ZpiMethodNotAllowedError, ZpiNetworkError, ZpiNotFoundError, ZpiPlanGateError, ZpiRateLimitError, ZpiServerError, ZpiTimeoutError };

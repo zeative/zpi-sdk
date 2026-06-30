@@ -6,9 +6,12 @@ export type { ZpiClientOptions } from "./core/config";
 export {
   ZpiAbortError,
   ZpiAuthError,
+  ZpiBulkCapError,
+  ZpiBulkNotEnabledError,
   ZpiDisabledError,
   ZpiError,
   ZpiExecError,
+  ZpiIdempotencyError,
   ZpiInvalidParamsError,
   ZpiMethodNotAllowedError,
   ZpiNetworkError,
@@ -32,3 +35,14 @@ export type {
   ScraperEndpoint,
   SchemaField,
 } from "./resources/catalog";
+export { BulkJob } from "./resources/bulk";
+export type {
+  Bulk,
+  BulkItem,
+  BulkItemResult,
+  BulkItemStatus,
+  BulkJobData,
+  BulkJobStatus,
+  BulkSubmitOpts,
+  BulkWaitOpts,
+} from "./resources/bulk";

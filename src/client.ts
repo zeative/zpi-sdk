@@ -7,6 +7,7 @@ import {
   type StreamOpts,
 } from "./resources/stream";
 import { createCatalog, type Catalog } from "./resources/catalog";
+import { createBulk, type Bulk } from "./resources/bulk";
 
 export class ZpiClient {
   // Resolved config kept in a private field so JSON.stringify(client) never leaks the apiKey.
@@ -15,9 +16,13 @@ export class ZpiClient {
   // No-auth public discovery namespace; holds config internally, never serialized.
   readonly catalog: Catalog;
 
+  // Bulk submit + wait() namespace; closes over #config, never serialized.
+  readonly bulk: Bulk;
+
   constructor(options: ZpiClientOptions) {
     this.#config = resolveConfig(options);
     this.catalog = createCatalog(this.#config);
+    this.bulk = createBulk(this.#config);
   }
 
   run<T = unknown>(
