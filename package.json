@@ -60,6 +60,7 @@
     "lint:types": "attw --pack . --profile node16",
     "dist:scan": "node scripts/scan-dist-builtins.mjs",
     "verify:runtimes": "node scripts/verify-runtimes.mjs",
+    "check:readme": "node scripts/check-readme-symbols.mjs",
     "size": "size-limit",
     "types:snapshot": "node scripts/snapshot-types.mjs --write",
     "types:check": "node scripts/snapshot-types.mjs --check",
@@ -68,7 +69,7 @@
     "release:version": "changeset version",
     "release:publish": "npm run build && changeset publish",
     "prepare": "husky",
-    "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types && npm run dist:scan && npm run size && npm run types:check && npm run test && npm run verify:runtimes"
+    "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types && npm run dist:scan && npm run size && npm run types:check && npm run test && npm run verify:runtimes && npm run check:readme"
   },
   "engines": {
     "node": ">=20.0.0"
