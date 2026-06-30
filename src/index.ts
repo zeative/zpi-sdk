@@ -18,4 +18,4 @@ export {
   ZpiServerError,
   ZpiTimeoutError,
 } from "./core/errors";
-export type { RunOpts, ScraperMap } from "./resources/exec";
+export type { RunOpts, ScraperMap, ScraperResult } from "./resources/exec";

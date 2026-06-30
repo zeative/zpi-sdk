@@ -13,9 +13,23 @@ export interface RunOpts {
 }
 
 // Codegen attaches concrete return types here via `declare module` merging.
+// Shape: { [`${category}:${scraper}`]: { [endpoint]: { params; result } } }.
 // Empty by default → run() falls back to `unknown`.
 // biome-ignore lint/suspicious/noEmptyInterface: declaration-merging target for codegen
 export interface ScraperMap {}
+
+// Narrow the result of run() from ScraperMap when codegen has merged an entry;
+// otherwise fall back to `unknown`. Keeps the frozen signature additive.
+export type ScraperResult<
+  K extends string,
+  E extends string,
+> = K extends keyof ScraperMap
+  ? E extends keyof ScraperMap[K]
+    ? ScraperMap[K][E] extends { result: infer R }
+      ? R
+      : unknown
+    : unknown
+  : unknown;
 
 export function buildDescriptor(
   projectKey: string,
