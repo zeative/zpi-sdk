@@ -1,0 +1,4 @@
+[
+  { "name": "ESM core", "path": "dist/index.mjs", "limit": "5 KB" },
+  { "name": "CJS core", "path": "dist/index.cjs", "limit": "5 KB" }
+]

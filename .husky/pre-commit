@@ -1,0 +1,1 @@
+npm run build && npm run typecheck && npm run dist:scan && npm run types:check

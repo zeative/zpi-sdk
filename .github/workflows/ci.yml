@@ -36,4 +36,11 @@ jobs:
       - name: Lint types (attw)
         run: npm run lint:types
 
-      # Plan 03 adds: dist:scan + size-limit
+      - name: Dist node-builtin scan (zero-dep core gate)
+        run: npm run dist:scan
+
+      - name: Size limit (gzip budget)
+        run: npm run size
+
+      - name: Type-surface snapshot check (DX-03)
+        run: npm run types:check
