@@ -101,6 +101,55 @@ export async function request<T = unknown>(
   }
 }
 
+// Stream-mode read path through the SAME fetch seam. No retry loop (streams are
+// not blind-retried); reads `res.body.getReader()` instead of `res.json()`.
+export async function requestStream(
+  config: ResolvedConfig,
+  descriptor: ReqDescriptor
+): Promise<{
+  contentType: string;
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+}> {
+  const method = descriptor.method ?? "POST";
+  let url = buildUrl(
+    config.baseURL,
+    descriptor.projectKey,
+    descriptor.endpoint,
+    descriptor.pathRest
+  );
+
+  const headers: Record<string, string> = {
+    ...config.defaultHeaders,
+    ...descriptor.headers,
+    "x-api-key": config.apiKey,
+  };
+
+  const init: RequestInit = { method, headers };
+  if (method === "GET") {
+    url = appendQuery(url, descriptor.params);
+  } else if (descriptor.params !== undefined) {
+    headers["content-type"] = "application/json";
+    init.body = JSON.stringify(descriptor.params);
+  }
+
+  const timeoutMs = descriptor.timeoutMs ?? config.timeoutMs;
+  const res = await fetchOnce(config, url, init, descriptor.signal, timeoutMs);
+
+  if (!res.ok) {
+    // Typed error precedes the stream — read the JSON body for the mapping.
+    const body = await res.json().catch(() => undefined);
+    throw fromResponse(res.status, body, res.headers);
+  }
+  if (!res.body) {
+    throw new ZpiNetworkError("Stream response had no body");
+  }
+
+  return {
+    contentType: res.headers.get("content-type") ?? "",
+    reader: res.body.getReader(),
+  };
+}
+
 // Single fetch call site wrapped with timeout + external-signal composition.
 async function fetchOnce(
   config: ResolvedConfig,
