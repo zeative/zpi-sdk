@@ -1,6 +1,7 @@
 // The SINGLE fetch seam. Only this module calls `config.fetch`. It injects auth,
 // builds the URL, and unwraps the {project,data,timestamp} envelope on 200.
 import type { ResolvedConfig } from "./config";
+import { fromResponse } from "./errors";
 import { appendQuery, buildUrl } from "./url";
 
 export interface ReqDescriptor {
@@ -10,22 +11,6 @@ export interface ReqDescriptor {
   params?: Record<string, unknown>;
   headers?: Record<string, string>;
   pathRest?: string;
-}
-
-// Minimal placeholder thrower — plan 02 swaps this for the typed hierarchy
-// (fromResponse) without touching the call path.
-function throwForResponse(
-  status: number,
-  body: unknown,
-  _headers: Headers
-): never {
-  const err = new Error(`Zapi request failed with status ${status}`) as Error & {
-    status: number;
-    raw: unknown;
-  };
-  err.status = status;
-  err.raw = body;
-  throw err;
 }
 
 export async function request<T = unknown>(
@@ -56,10 +41,10 @@ export async function request<T = unknown>(
   }
 
   const res = await config.fetch(url, init);
-  const body = await res.json().catch(() => null);
+  const body = await res.json().catch(() => undefined);
 
   if (!res.ok) {
-    throwForResponse(res.status, body, res.headers);
+    throw fromResponse(res.status, body, res.headers);
   }
 
   // Unwrap the {project,data,timestamp} envelope — return only `.data`.
