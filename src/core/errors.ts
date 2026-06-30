@@ -29,7 +29,8 @@ function msgOf(body: unknown, fallback: string): string {
 
 export class ZpiError extends Error {
   status: number;
-  code?: string;
+  // string for /v1 envelope codes; number for JSON-RPC codes (ZpiMcpError).
+  code?: string | number;
   raw: unknown;
   requestId?: string;
 
@@ -243,6 +244,23 @@ export class ZpiAbortError extends ZpiError {
     this.name = "ZpiAbortError";
     this.cause = cause;
     Object.setPrototypeOf(this, ZpiAbortError.prototype);
+  }
+}
+
+// JSON-RPC-level error from the /mcp transport (HTTP was 2xx, but the JSON-RPC
+// envelope carried an `error`). status=0 (no HTTP failure). Stores only
+// message/code/data/raw — never the apiKey or request headers (T-07-01).
+export class ZpiMcpError extends ZpiError {
+  data?: unknown;
+  constructor(
+    message: string,
+    opts: { code?: number | string; data?: unknown; raw: unknown; requestId?: string }
+  ) {
+    super(message, 0, opts.raw, opts.requestId);
+    this.name = "ZpiMcpError";
+    this.code = opts.code;
+    this.data = opts.data;
+    Object.setPrototypeOf(this, ZpiMcpError.prototype);
   }
 }
 
