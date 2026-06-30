@@ -62,11 +62,12 @@
     "size": "size-limit",
     "types:snapshot": "node scripts/snapshot-types.mjs --write",
     "types:check": "node scripts/snapshot-types.mjs --check",
+    "test": "vitest run",
     "changeset": "changeset",
     "release:version": "changeset version",
     "release:publish": "npm run build && changeset publish",
     "prepare": "husky",
-    "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types && npm run dist:scan && npm run size && npm run types:check"
+    "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types && npm run dist:scan && npm run size && npm run types:check && npm run test"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -84,6 +85,7 @@
     "size-limit": "^12.1.0",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   }
 }
