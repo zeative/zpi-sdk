@@ -22,10 +22,115 @@ type ScraperResult<K extends string, E extends string> = K extends keyof Scraper
     result: infer R;
 } ? R : unknown : unknown : unknown;
 
+interface SseEvent {
+    event?: string;
+    data: string;
+    id?: string;
+}
+
+interface StreamOpts {
+    method?: "GET" | "POST";
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    headers?: Record<string, string>;
+    pathRest?: string;
+}
+type StreamEvent = SseEvent | string;
+
+interface SchemaField {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+    default?: unknown;
+    example?: unknown;
+    enumValues?: unknown[];
+    in?: string;
+}
+interface EndpointSchema {
+    fields: SchemaField[];
+}
+interface CatalogListItem {
+    id: string;
+    slug: string;
+    category: string;
+    displayName: string;
+    description: string | null;
+    tags: string[];
+    iconUrl: string | null;
+    endpointCount: number;
+    totalRequests: number;
+    maxCacheTtl: number;
+    minPlan: string | null;
+    hasBulk: boolean;
+    hasGatedEndpoint: boolean;
+}
+interface CatalogList {
+    items: CatalogListItem[];
+    nextCursor: string | null;
+    total: number;
+}
+interface ScraperEndpoint {
+    id: string;
+    slug: string;
+    displayName: string | null;
+    description: string | null;
+    method: string;
+    paramsSchema: unknown;
+    cacheTtl: number | null;
+    pathTemplate: string | null;
+    exampleResponse: unknown;
+    requestCount: number | null;
+    lastRequestAt: string | null;
+    enabled: boolean;
+    minPlan: string | null;
+    bulkEnabled: boolean;
+}
+interface ScraperDetail {
+    id: string;
+    slug: string;
+    category: string;
+    displayName: string;
+    description: string | null;
+    tags: string[];
+    iconUrl: string | null;
+    iconUrlPng: string | null;
+    enabled: boolean;
+    minPlan: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    endpoints: ScraperEndpoint[];
+}
+interface Category {
+    slug: string;
+    displayName: string;
+    iconUrl: string | null;
+    color: string | null;
+    description: string | null;
+}
+interface CatalogListOpts {
+    q?: string;
+    cat?: string;
+    cursor?: string;
+    limit?: number;
+}
+interface Catalog {
+    list(opts?: CatalogListOpts): Promise<CatalogList>;
+    get(slug: string): Promise<ScraperDetail>;
+    categories(): Promise<Category[]>;
+    schema(slug: string, endpoint: string): Promise<EndpointSchema>;
+    stats(slug: string): Promise<{
+        requests: number;
+        successRate: number;
+    }>;
+}
+
 declare class ZpiClient {
     #private;
+    readonly catalog: Catalog;
     constructor(options: ZpiClientOptions);
     run<T = unknown>(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: RunOpts): Promise<T>;
+    stream(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: StreamOpts): AsyncIterable<StreamEvent>;
     toJSON(): Record<string, never>;
 }
 
@@ -91,4 +196,4 @@ declare class ZpiAbortError extends ZpiError {
 
 declare const VERSION: "0.0.0";
 
-export { type RunOpts, type ScraperMap, type ScraperResult, VERSION, ZpiAbortError, ZpiAuthError, ZpiClient, type ZpiClientOptions, ZpiDisabledError, ZpiError, ZpiExecError, ZpiInvalidParamsError, ZpiMethodNotAllowedError, ZpiNetworkError, ZpiNotFoundError, ZpiPlanGateError, ZpiRateLimitError, ZpiServerError, ZpiTimeoutError };
+export { type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiAbortError, ZpiAuthError, ZpiClient, type ZpiClientOptions, ZpiDisabledError, ZpiError, ZpiExecError, ZpiInvalidParamsError, ZpiMethodNotAllowedError, ZpiNetworkError, ZpiNotFoundError, ZpiPlanGateError, ZpiRateLimitError, ZpiServerError, ZpiTimeoutError };
