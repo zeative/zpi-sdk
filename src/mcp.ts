@@ -1,2 +1,6 @@
-// Placeholder ./mcp entry. Real MCP client (optional-peer @modelcontextprotocol/sdk) lands in Phase 7.
-export const MCP_ENTRY = "placeholder" as const;
+// Public `./mcp` subpath entry — isolated MCP client, zero runtime deps, zero
+// node-builtins, reuses only core/{config,errors}. The lean `.` root never imports this.
+export { createMcpClient } from "./mcp/client";
+export type { McpClient, McpTool } from "./mcp/client";
+export { PROTOCOL_VERSION } from "./mcp/transport";
+export { ZpiMcpError } from "./core/errors";

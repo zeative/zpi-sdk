@@ -1,21 +1,5 @@
-interface ZpiClientOptions {
-    apiKey: string;
-    baseURL?: string;
-    defaultHeaders?: Record<string, string>;
-    fetch?: typeof globalThis.fetch;
-    timeoutMs?: number;
-    maxRetries?: number;
-    baseRetryDelayMs?: number;
-}
-interface ResolvedConfig {
-    apiKey: string;
-    baseURL: string;
-    defaultHeaders: Record<string, string>;
-    fetch: typeof globalThis.fetch;
-    timeoutMs: number;
-    maxRetries: number;
-    baseRetryDelayMs: number;
-}
+import { R as ResolvedConfig, Z as ZpiClientOptions } from './errors-BpEREz7k.js';
+export { a as ZpiAbortError, b as ZpiAuthError, c as ZpiBulkCapError, d as ZpiBulkNotEnabledError, e as ZpiDisabledError, f as ZpiError, g as ZpiExecError, h as ZpiIdempotencyError, i as ZpiInvalidParamsError, j as ZpiMethodNotAllowedError, k as ZpiNetworkError, l as ZpiNotFoundError, m as ZpiPlanGateError, n as ZpiRateLimitError, o as ZpiServerError, p as ZpiTimeoutError } from './errors-BpEREz7k.js';
 
 interface RunOpts {
     method?: "GET" | "POST";
@@ -202,78 +186,6 @@ declare class ZpiClient {
     toJSON(): Record<string, never>;
 }
 
-type HeaderBag = Headers | Record<string, string> | undefined;
-declare class ZpiError extends Error {
-    status: number;
-    code?: string;
-    raw: unknown;
-    requestId?: string;
-    constructor(message: string, status: number, raw: unknown, requestId?: string);
-}
-declare class ZpiInvalidParamsError extends ZpiError {
-    errors: Array<{
-        path?: string;
-        message?: string;
-    }>;
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiExecError extends ZpiError {
-    error: string;
-    errors: unknown;
-    context?: unknown;
-    project?: string;
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiAuthError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiPlanGateError extends ZpiError {
-    requiredPlan?: string;
-    upgradeUrl?: string;
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiNotFoundError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiMethodNotAllowedError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiRateLimitError extends ZpiError {
-    limit?: number;
-    used?: number;
-    window?: "minute" | "month" | string;
-    retryAfterSec?: number;
-    retryAfter?: number;
-    requested?: number;
-    constructor(body: unknown, status: number, headers: HeaderBag, requestId?: string);
-}
-declare class ZpiBulkNotEnabledError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiBulkCapError extends ZpiError {
-    cap?: number;
-    submitted?: number;
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiIdempotencyError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiServerError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiDisabledError extends ZpiError {
-    constructor(body: unknown, status: number, requestId?: string);
-}
-declare class ZpiNetworkError extends ZpiError {
-    constructor(message: string, cause?: unknown);
-}
-declare class ZpiTimeoutError extends ZpiError {
-    constructor(message: string, cause?: unknown);
-}
-declare class ZpiAbortError extends ZpiError {
-    constructor(message: string, cause?: unknown);
-}
-
 declare const VERSION: "0.0.0";
 
-export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiAbortError, ZpiAuthError, ZpiBulkCapError, ZpiBulkNotEnabledError, ZpiClient, type ZpiClientOptions, ZpiDisabledError, ZpiError, ZpiExecError, ZpiIdempotencyError, ZpiInvalidParamsError, ZpiMethodNotAllowedError, ZpiNetworkError, ZpiNotFoundError, ZpiPlanGateError, ZpiRateLimitError, ZpiServerError, ZpiTimeoutError };
+export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };
