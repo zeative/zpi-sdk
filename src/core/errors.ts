@@ -120,19 +120,84 @@ export class ZpiRateLimitError extends ZpiError {
   window?: "minute" | "month" | string;
   retryAfterSec?: number;
   retryAfter?: number;
+  requested?: number;
   constructor(body: unknown, status: number, headers: HeaderBag, requestId?: string) {
     super(msgOf(body, "Rate limit exceeded"), status, body, requestId);
     this.name = "ZpiRateLimitError";
-    const content = isObj(body) && isObj(body.content) ? body.content : {};
-    this.limit = typeof content.limit === "number" ? content.limit : undefined;
-    this.used = typeof content.used === "number" ? content.used : undefined;
-    this.window = typeof content.window === "string" ? content.window : undefined;
-    this.retryAfterSec =
-      typeof content.retryAfterSec === "number" ? content.retryAfterSec : undefined;
+    const b = isObj(body) ? body : {};
+    const inner = isObj(b.error) ? b.error : {};
+    // Two 429 shapes share this subclass: the rate-limit envelope nests fields in
+    // content.{limit,used,window}; the bulk quota envelope puts them top-level
+    // alongside error.code === "quota_exceeded".
+    if (inner.code === "quota_exceeded") {
+      this.code = typeof inner.code === "string" ? inner.code : undefined;
+      this.limit = typeof b.limit === "number" ? b.limit : undefined;
+      this.used = typeof b.used === "number" ? b.used : undefined;
+      this.requested = typeof b.requested === "number" ? b.requested : undefined;
+    } else {
+      const content = isObj(b.content) ? b.content : {};
+      this.limit = typeof content.limit === "number" ? content.limit : undefined;
+      this.used = typeof content.used === "number" ? content.used : undefined;
+      this.window = typeof content.window === "string" ? content.window : undefined;
+      this.retryAfterSec =
+        typeof content.retryAfterSec === "number" ? content.retryAfterSec : undefined;
+    }
     const ra = getHeader(headers, "retry-after");
     const parsed = ra !== undefined ? Number(ra) : NaN;
     this.retryAfter = Number.isFinite(parsed) ? parsed : this.retryAfterSec;
     Object.setPrototypeOf(this, ZpiRateLimitError.prototype);
+  }
+}
+
+// Bulk-specific subclasses (BULK-03). Each reads the discriminator + message from
+// the nested error:{code,message} envelope, keeps the full body as `.raw`.
+export class ZpiBulkNotEnabledError extends ZpiError {
+  constructor(body: unknown, status: number, requestId?: string) {
+    const inner = isObj(body) && isObj(body.error) ? body.error : {};
+    super(
+      typeof inner.message === "string" ? inner.message : "Bulk submit not enabled",
+      status,
+      body,
+      requestId
+    );
+    this.name = "ZpiBulkNotEnabledError";
+    this.code = typeof inner.code === "string" ? inner.code : undefined;
+    Object.setPrototypeOf(this, ZpiBulkNotEnabledError.prototype);
+  }
+}
+
+export class ZpiBulkCapError extends ZpiError {
+  cap?: number;
+  submitted?: number;
+  constructor(body: unknown, status: number, requestId?: string) {
+    const b = isObj(body) ? body : {};
+    const inner = isObj(b.error) ? b.error : {};
+    super(
+      typeof inner.message === "string" ? inner.message : "Bulk cap exceeded",
+      status,
+      body,
+      requestId
+    );
+    this.name = "ZpiBulkCapError";
+    this.code = typeof inner.code === "string" ? inner.code : undefined;
+    this.cap = typeof b.cap === "number" ? b.cap : undefined;
+    this.submitted = typeof b.submitted === "number" ? b.submitted : undefined;
+    Object.setPrototypeOf(this, ZpiBulkCapError.prototype);
+  }
+}
+
+export class ZpiIdempotencyError extends ZpiError {
+  constructor(body: unknown, status: number, requestId?: string) {
+    const inner = isObj(body) && isObj(body.error) ? body.error : {};
+    super(
+      typeof inner.message === "string" ? inner.message : "Idempotency key reuse",
+      status,
+      body,
+      requestId
+    );
+    this.name = "ZpiIdempotencyError";
+    this.code = typeof inner.code === "string" ? inner.code : undefined;
+    Object.setPrototypeOf(this, ZpiIdempotencyError.prototype);
   }
 }
 
@@ -191,9 +256,14 @@ export function fromResponse(
 ): ZpiError {
   const reqId = getHeader(headers, "x-request-id");
   const b = isObj(body) ? body : {};
+  // The bulk variants nest a discriminator at error.code, distinct from the
+  // plan_gate/invalid_params shapes at the same status.
+  const inner = isObj(b.error) ? b.error : {};
+  const errCode = typeof inner.code === "string" ? inner.code : undefined;
 
   switch (status) {
     case 400: {
+      if (errCode === "bulk_cap_exceeded") return new ZpiBulkCapError(body, status, reqId);
       // exec error carries project+error+timestamp; invalid_params carries
       // message==="Invalid params" or an errors[] of {path,...}.
       const isExec =
@@ -206,11 +276,15 @@ export function fromResponse(
     case 401:
       return new ZpiAuthError(body, status, reqId);
     case 403:
+      if (errCode === "bulk_not_enabled")
+        return new ZpiBulkNotEnabledError(body, status, reqId);
       return new ZpiPlanGateError(body, status, reqId);
     case 404:
       return new ZpiNotFoundError(body, status, reqId);
     case 405:
       return new ZpiMethodNotAllowedError(body, status, reqId);
+    case 422:
+      return new ZpiIdempotencyError(body, status, reqId);
     case 429:
       return new ZpiRateLimitError(body, status, headers, reqId);
     case 500:
