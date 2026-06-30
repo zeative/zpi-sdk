@@ -44,3 +44,25 @@ jobs:
 
       - name: Type-surface snapshot check (DX-03)
         run: npm run types:check
+
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Runtime matrix (Node + Bun + Deno + browser-proxy)
+        run: npm run verify:runtimes
