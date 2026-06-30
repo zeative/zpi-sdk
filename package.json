@@ -14,7 +14,7 @@
     "bin"
   ],
   "bin": {
-    "zpi": "./bin/zpi.mjs"
+    "zpi": "bin/zpi.mjs"
   },
   "exports": {
     ".": {
