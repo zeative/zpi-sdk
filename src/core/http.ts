@@ -150,6 +150,40 @@ export async function requestStream(
   };
 }
 
+// Catalog read path: raw absolute `url` (caller builds it under baseURL, NOT via
+// buildUrl) + `.content` envelope unwrap. Auth-optional public routes; the key is
+// sent but harmless. Single attempt — funnels through the same `fetchOnce` seam.
+export async function requestContent<T = unknown>(
+  config: ResolvedConfig,
+  opts: {
+    url: string;
+    params?: Record<string, unknown>;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  }
+): Promise<T> {
+  const headers: Record<string, string> = {
+    ...config.defaultHeaders,
+    "x-api-key": config.apiKey,
+  };
+  const url = appendQuery(opts.url, opts.params);
+  const res = await fetchOnce(
+    config,
+    url,
+    { method: "GET", headers },
+    opts.signal,
+    opts.timeoutMs ?? config.timeoutMs
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => undefined);
+    throw fromResponse(res.status, body, res.headers);
+  }
+
+  const body = await res.json().catch(() => undefined);
+  return (body as { content: T }).content;
+}
+
 // Single fetch call site wrapped with timeout + external-signal composition.
 async function fetchOnce(
   config: ResolvedConfig,
