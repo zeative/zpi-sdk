@@ -9,6 +9,7 @@ export interface ZpiClientOptions {
   fetch?: typeof globalThis.fetch;
   timeoutMs?: number;
   maxRetries?: number;
+  baseRetryDelayMs?: number;
 }
 
 export interface ResolvedConfig {
@@ -18,6 +19,7 @@ export interface ResolvedConfig {
   fetch: typeof globalThis.fetch;
   timeoutMs: number;
   maxRetries: number;
+  baseRetryDelayMs: number;
 }
 
 export function resolveConfig(opts: ZpiClientOptions): ResolvedConfig {
@@ -31,5 +33,6 @@ export function resolveConfig(opts: ZpiClientOptions): ResolvedConfig {
     fetch: opts.fetch ?? globalThis.fetch,
     timeoutMs: opts.timeoutMs ?? 30000,
     maxRetries: opts.maxRetries ?? 2,
+    baseRetryDelayMs: opts.baseRetryDelayMs ?? 200,
   };
 }

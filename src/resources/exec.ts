@@ -30,6 +30,9 @@ export function buildDescriptor(
     params,
     headers: opts?.headers,
     pathRest: opts?.pathRest,
+    signal: opts?.signal,
+    timeoutMs: opts?.timeoutMs,
+    idempotencyKey: opts?.idempotencyKey,
   };
 }
 
