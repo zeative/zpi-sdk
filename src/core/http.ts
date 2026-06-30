@@ -23,6 +23,21 @@ export interface ReqDescriptor {
   idempotencyKey?: string;
 }
 
+// Bare-body descriptor: either a raw absolute `url` (status GET) OR the
+// projectKey/endpoint/pathRest trio (submit POST → buildUrl).
+export interface BareDescriptor {
+  url?: string;
+  projectKey?: string;
+  endpoint?: string;
+  pathRest?: string;
+  method?: "GET" | "POST";
+  params?: Record<string, unknown>;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  idempotencyKey?: string;
+}
+
 // Sentinel reasons so the post-mortem can tell timeout vs external abort apart.
 const TIMEOUT = Symbol("zpi-timeout");
 const EXTERNAL = Symbol("zpi-external-abort");
@@ -182,6 +197,84 @@ export async function requestContent<T = unknown>(
 
   const body = await res.json().catch(() => undefined);
   return (body as { content: T }).content;
+}
+
+// Bulk read/write path: returns the FULL parsed JSON body (no `.data`/`.content`
+// unwrap — bulk submit/status responses are bare). Mirrors `request()`'s retry
+// loop + header/body assembly; routes through the SAME `fetchOnce` seam. Accepts a
+// raw absolute `url` (status GET) or the projectKey/endpoint trio (submit POST).
+export async function requestBare<T = unknown>(
+  config: ResolvedConfig,
+  descriptor: BareDescriptor
+): Promise<T> {
+  const method = descriptor.method ?? "POST";
+  let url =
+    descriptor.url ??
+    buildUrl(
+      config.baseURL,
+      descriptor.projectKey ?? "",
+      descriptor.endpoint ?? "",
+      descriptor.pathRest
+    );
+
+  const headers: Record<string, string> = {
+    ...config.defaultHeaders,
+    ...descriptor.headers,
+    "x-api-key": config.apiKey,
+  };
+  if (descriptor.idempotencyKey) {
+    headers["Idempotency-Key"] = descriptor.idempotencyKey;
+  }
+
+  const init: RequestInit = { method, headers };
+  if (method === "GET") {
+    url = appendQuery(url, descriptor.params);
+  } else if (descriptor.params !== undefined) {
+    headers["content-type"] = "application/json";
+    init.body = JSON.stringify(descriptor.params);
+  }
+
+  const timeoutMs = descriptor.timeoutMs ?? config.timeoutMs;
+  const maxRetries = config.maxRetries;
+  const retryable = isRetryEligible(method, descriptor.idempotencyKey);
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetchOnce(config, url, init, descriptor.signal, timeoutMs);
+      const body = await res.json().catch(() => undefined);
+
+      if (!res.ok) {
+        if (
+          retryable &&
+          attempt < maxRetries &&
+          isRetryableStatus(res.status)
+        ) {
+          await sleep(
+            delayFor(attempt, config.baseRetryDelayMs, res.status, body, res.headers),
+            descriptor.signal
+          );
+          continue;
+        }
+        throw fromResponse(res.status, body, res.headers);
+      }
+
+      // Bare body — no envelope unwrap.
+      return body as T;
+    } catch (err) {
+      if (
+        retryable &&
+        attempt < maxRetries &&
+        err instanceof ZpiNetworkError
+      ) {
+        await sleep(
+          delayFor(attempt, config.baseRetryDelayMs),
+          descriptor.signal
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 // Single fetch call site wrapped with timeout + external-signal composition.
