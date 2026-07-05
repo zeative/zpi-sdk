@@ -1,6 +1,6 @@
 <div align="center">
 
-<img alt="zpi-sdk - Universal TypeScript SDK for the Zapi (Zest API) scraper platform" src="https://zpi.web.id/favicon/web-app-manifest-192x192.png" width="140">
+<img alt="zpi-sdk - Universal TypeScript SDK for the Zapi (Zest API) scraper platform" src="https://zpi.web.id/favicon/web-app-manifest-192x192.png" width="90">
 
 <h1 align="center">zpi-sdk — Universal TypeScript SDK <br /> for the Zapi (Zest API) Scraper Platform</h1>
 
