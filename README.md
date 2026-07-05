@@ -248,7 +248,7 @@ Distributed under the **MIT License**. See [`LICENSE`](https://github.com/zeativ
 
 <div align="left">
   <p>
-    <img alt="zpi-sdk" src="https://zpi.web.id/favicon/web-app-manifest-192x192.png" width="28" align="center">
+    <img alt="zpi-sdk" src="https://zpi.web.id/favicon/web-app-manifest-192x192.png" width="20" align="center">
     Copyright © 2026 zaadevofc. All rights reserved.
   </p>
 </div>
