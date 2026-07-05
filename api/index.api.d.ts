@@ -14,6 +14,9 @@ interface ScraperMap {
 type ScraperResult<K extends string, E extends string> = K extends keyof ScraperMap ? E extends keyof ScraperMap[K] ? ScraperMap[K][E] extends {
     result: infer R;
 } ? R : unknown : unknown : unknown;
+type ScraperParams<K extends string, E extends string> = K extends keyof ScraperMap ? E extends keyof ScraperMap[K] ? ScraperMap[K][E] extends {
+    params: infer P;
+} ? P : Record<string, unknown> : Record<string, unknown> : Record<string, unknown>;
 
 interface SseEvent {
     event?: string;
@@ -181,11 +184,11 @@ declare class ZpiClient {
     readonly catalog: Catalog;
     readonly bulk: Bulk;
     constructor(options: ZpiClientOptions);
-    run<T = unknown>(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: RunOpts): Promise<T>;
-    stream(projectKey: string, endpoint: string, params?: Record<string, unknown>, opts?: StreamOpts): AsyncIterable<StreamEvent>;
+    run<T = unknown, K extends string = string, E extends string = string>(projectKey: K, endpoint: E, params?: ScraperParams<K, E>, opts?: RunOpts): Promise<T>;
+    stream<K extends string = string, E extends string = string>(projectKey: K, endpoint: E, params?: ScraperParams<K, E>, opts?: StreamOpts): AsyncIterable<StreamEvent>;
     toJSON(): Record<string, never>;
 }
 
 declare const VERSION: "0.0.0";
 
-export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };
+export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperParams, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };

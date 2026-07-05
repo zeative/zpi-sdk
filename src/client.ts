@@ -1,6 +1,6 @@
 import { resolveConfig, type ZpiClientOptions } from "./core/config";
 import type { ResolvedConfig } from "./core/config";
-import { run, type RunOpts } from "./resources/exec";
+import { run, type RunOpts, type ScraperParams } from "./resources/exec";
 import {
   runStream,
   type StreamEvent,
@@ -25,22 +25,36 @@ export class ZpiClient {
     this.bulk = createBulk(this.#config);
   }
 
-  run<T = unknown>(
-    projectKey: string,
-    endpoint: string,
-    params?: Record<string, unknown>,
+  // K/E infer as literals so codegen-merged ScraperMap entries narrow `params`;
+  // without codegen they collapse to string and params stays a plain record.
+  run<T = unknown, K extends string = string, E extends string = string>(
+    projectKey: K,
+    endpoint: E,
+    params?: ScraperParams<K, E>,
     opts?: RunOpts
   ): Promise<T> {
-    return run<T>(this.#config, projectKey, endpoint, params, opts);
+    return run<T>(
+      this.#config,
+      projectKey,
+      endpoint,
+      params as Record<string, unknown> | undefined,
+      opts
+    );
   }
 
-  stream(
-    projectKey: string,
-    endpoint: string,
-    params?: Record<string, unknown>,
+  stream<K extends string = string, E extends string = string>(
+    projectKey: K,
+    endpoint: E,
+    params?: ScraperParams<K, E>,
     opts?: StreamOpts
   ): AsyncIterable<StreamEvent> {
-    return runStream(this.#config, projectKey, endpoint, params, opts);
+    return runStream(
+      this.#config,
+      projectKey,
+      endpoint,
+      params as Record<string, unknown> | undefined,
+      opts
+    );
   }
 
   // Explicit redaction so no config (and thus no apiKey) is ever serialized.

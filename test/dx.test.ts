@@ -64,6 +64,40 @@ describe("run() forgiving endpoint", () => {
   });
 });
 
+describe("codegen emit hardening", () => {
+  it("quotes hyphenated endpoint slugs and field names, escapes */ in docs", async () => {
+    const { emitScraperMap } = await import("../src/codegen/emit");
+    const out = emitScraperMap(
+      [
+        {
+          category: "finance",
+          scraper: "idx",
+          endpoints: [
+            {
+              slug: "broker-summary",
+              schema: {
+                fields: [
+                  {
+                    name: "start-date",
+                    type: "string",
+                    required: false,
+                    description: "ends with */ badly",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      { baseURL: "https://api.zpi.web.id" }
+    );
+    expect(out).toContain('"broker-summary": { params:');
+    expect(out).toContain('"start-date"?: string;');
+    expect(out).not.toMatch(/badly \*\/ \*\//);
+    expect(out).toContain("*\\/ badly");
+  });
+});
+
 describe("catalog forgiving slug", () => {
   it("accepts the run() project key — strips the category prefix", async () => {
     const f = vi.fn(async () =>

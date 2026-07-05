@@ -42,12 +42,22 @@ export function mapFieldType(field: SchemaField): string {
 	}
 }
 
+// Quote keys that aren't valid TS identifiers (hyphenated slugs, dots, …).
+function propKey(name: string): string {
+	return /^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name);
+}
+
+// `*/` inside a description would terminate the JSDoc block early.
+function docComment(description: string): string {
+	return `/** ${description.replace(/\*\//g, "*\\/")} */ `;
+}
+
 export function emitParams(fields: SchemaField[]): string {
 	if (!fields || fields.length === 0) return "Record<string, unknown>";
 	const props = fields.map((f) => {
-		const doc = f.description ? `/** ${f.description} */ ` : "";
+		const doc = f.description ? docComment(f.description) : "";
 		const opt = f.required ? "" : "?";
-		return `${doc}${f.name}${opt}: ${mapFieldType(f)};`;
+		return `${doc}${propKey(f.name)}${opt}: ${mapFieldType(f)};`;
 	});
 	return `{ ${props.join(" ")} }`;
 }
@@ -65,6 +75,10 @@ export function emitScraperMap(
 	lines.push(`// source: ${opts.baseURL}`);
 	lines.push("// regenerate with: npx zpi codegen");
 	lines.push("");
+	// Without a top-level export the file is an ambient module DECLARATION that
+	// shadows the real package types; `export {}` makes it an augmentation.
+	lines.push("export {};");
+	lines.push("");
 	lines.push('declare module "zpi-sdk" {');
 	lines.push("\tinterface ScraperMap {");
 	for (const s of sorted) {
@@ -73,7 +87,7 @@ export function emitScraperMap(
 		);
 		const entries = eps.map(
 			(ep) =>
-				`${ep.slug}: { params: ${emitParams(ep.schema.fields)}; result: unknown };`
+				`${propKey(ep.slug)}: { params: ${emitParams(ep.schema.fields)}; result: unknown };`
 		);
 		lines.push(
 			`\t\t"${s.category}:${s.scraper}": { ${entries.join(" ")} };`

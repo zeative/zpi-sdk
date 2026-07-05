@@ -32,6 +32,19 @@ export type ScraperResult<
     : unknown
   : unknown;
 
+// Narrow run()'s params from ScraperMap when codegen has merged an entry;
+// otherwise stay a plain record. Same additive pattern as ScraperResult.
+export type ScraperParams<
+  K extends string,
+  E extends string,
+> = K extends keyof ScraperMap
+  ? E extends keyof ScraperMap[K]
+    ? ScraperMap[K][E] extends { params: infer P }
+      ? P
+      : Record<string, unknown>
+    : Record<string, unknown>
+  : Record<string, unknown>;
+
 export function buildDescriptor(
   projectKey: string,
   endpoint: string,

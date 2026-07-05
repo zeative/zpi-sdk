@@ -21,7 +21,7 @@ export {
   ZpiServerError,
   ZpiTimeoutError,
 } from "./core/errors";
-export type { RunOpts, ScraperMap, ScraperResult } from "./resources/exec";
+export type { RunOpts, ScraperMap, ScraperParams, ScraperResult } from "./resources/exec";
 export type { StreamEvent, StreamOpts } from "./resources/stream";
 export type { SseEvent } from "./core/sse";
 export type {
