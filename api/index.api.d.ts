@@ -1,5 +1,5 @@
-import { R as ResolvedConfig, Z as ZpiClientOptions } from './errors-BX0OR4LA.js';
-export { a as ZpiAbortError, b as ZpiAuthError, c as ZpiBulkCapError, d as ZpiBulkNotEnabledError, e as ZpiDisabledError, f as ZpiError, g as ZpiExecError, h as ZpiIdempotencyError, i as ZpiInvalidParamsError, j as ZpiMethodNotAllowedError, k as ZpiNetworkError, l as ZpiNotFoundError, m as ZpiPlanGateError, n as ZpiRateLimitError, o as ZpiServerError, p as ZpiTimeoutError } from './errors-BX0OR4LA.js';
+import { R as ResolvedConfig, Z as ZpiClientOptions } from './config-CpdeH-qT.js';
+export { Z as ZpiAbortError, a as ZpiAuthError, b as ZpiBulkCapError, c as ZpiBulkNotEnabledError, d as ZpiDisabledError, e as ZpiError, f as ZpiExecError, g as ZpiIdempotencyError, h as ZpiInvalidParamsError, i as ZpiMethodNotAllowedError, j as ZpiNetworkError, k as ZpiNotFoundError, l as ZpiPlanGateError, m as ZpiRateLimitError, n as ZpiServerError, o as ZpiTimeoutError } from './errors-B3sVgUWh.js';
 
 interface RunOpts {
     method?: "GET" | "POST";
@@ -189,6 +189,6 @@ declare class ZpiClient {
     toJSON(): Record<string, never>;
 }
 
-declare const VERSION: "0.1.2";
+declare const VERSION: "0.2.0";
 
 export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperParams, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };

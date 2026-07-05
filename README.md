@@ -103,6 +103,7 @@ The `mcp` module never loads from the root entry, so the core stays lean. See th
 - **Streaming out of the box** — `client.stream(…)` returns an async iterable of SSE events, reading via `body.getReader()` so it streams incrementally everywhere.
 - **Bulk jobs** — submit many items, `job.wait()` with progress callbacks; submits auto-reuse an `Idempotency-Key`, so retries never create duplicate jobs.
 - **Public catalog discovery** — list scrapers, categories, endpoint schemas, and stats without auth.
+- **Webhook verification built in** — `zpi-sdk/webhooks` verifies `X-Zpi-Signature` (HMAC-SHA256, timing-safe) and returns typed events.
 - **Typed codegen** — `npx zpi codegen` generates per-scraper bindings from the live catalog, narrowing `run()`'s params with full autocomplete.
 - **Safe retries** — only network errors and `429/502/503/504` are retried (exponential backoff + jitter); a POST is never blind-retried without an `idempotencyKey`. API key redacted from every error and log.
 
@@ -179,6 +180,22 @@ const { items } = await client.catalog.list({ cat: 'social', limit: 20 })
 const detail = await client.catalog.get('social:instagram')
 const schema = await client.catalog.schema('social:instagram', 'profile')
 const stats = await client.catalog.stats('social:instagram')
+```
+
+### Handle webhooks
+
+Verify and parse incoming webhook deliveries (`bulk.completed`, `quota.warning`, `request.error`, …) with the zero-dependency `zpi-sdk/webhooks` helper — Web Crypto HMAC with a timing-safe compare, so it runs on Node, Bun, Deno, and edge workers:
+
+```typescript
+import { parseWebhook } from 'zpi-sdk/webhooks'
+
+// In your HTTP handler — pass the RAW body string, not the parsed JSON:
+const event = await parseWebhook(rawBody, {
+  signature: req.headers['x-zpi-signature'],
+  secret: process.env.ZPI_WEBHOOK_SECRET,
+})
+// → { id, event: 'bulk.completed' | …, data, deliveredAt }
+// Throws ZpiWebhookVerifyError on a bad signature or malformed payload.
 ```
 
 ### Typed codegen

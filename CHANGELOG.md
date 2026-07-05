@@ -1,5 +1,11 @@
 # zpi-sdk
 
+## 0.2.0
+
+### Minor Changes
+
+- New `zpi-sdk/webhooks` subpath: `verifyWebhook` (timing-safe HMAC-SHA256 check of `X-Zpi-Signature` via Web Crypto — Node/Bun/Deno/edge) and `parseWebhook` (verify + typed `{ id, event, data, deliveredAt }` envelope, throws `ZpiWebhookVerifyError` on bad signature). Ships the full event-name union (`bulk.completed`, `quota.warning`, …).
+
 ## 0.1.2
 
 ### Patch Changes

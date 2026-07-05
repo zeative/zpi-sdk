@@ -247,6 +247,16 @@ export class ZpiAbortError extends ZpiError {
   }
 }
 
+// Incoming-webhook verification failure (bad signature / malformed payload).
+// status 0 — this is a local check, no HTTP response involved.
+export class ZpiWebhookVerifyError extends ZpiError {
+  constructor(message: string) {
+    super(message, 0, undefined);
+    this.name = "ZpiWebhookVerifyError";
+    Object.setPrototypeOf(this, ZpiWebhookVerifyError.prototype);
+  }
+}
+
 // JSON-RPC-level error from the /mcp transport (HTTP was 2xx, but the JSON-RPC
 // envelope carried an `error`). status=0 (no HTTP failure). Stores only
 // message/code/data/raw — never the apiKey or request headers (T-07-01).

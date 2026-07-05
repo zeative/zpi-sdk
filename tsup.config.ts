@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts", "src/mcp.ts", "src/codegen.ts"],
+  entry: ["src/index.ts", "src/mcp.ts", "src/codegen.ts", "src/webhooks.ts"],
   format: ["esm", "cjs"],
   outDir: "dist",
   target: "es2022",

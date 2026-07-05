@@ -1,6 +1,6 @@
 {
   "name": "zpi-sdk",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Universal, zero-dependency TypeScript SDK for the Zest API (Zapi) scraper platform.",
   "license": "MIT",
   "author": "zaadevofc",
@@ -45,6 +45,16 @@
       "require": {
         "types": "./dist/codegen.d.cts",
         "default": "./dist/codegen.cjs"
+      }
+    },
+    "./webhooks": {
+      "import": {
+        "types": "./dist/webhooks.d.ts",
+        "default": "./dist/webhooks.mjs"
+      },
+      "require": {
+        "types": "./dist/webhooks.d.cts",
+        "default": "./dist/webhooks.cjs"
       }
     }
   },
