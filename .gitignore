@@ -5,3 +5,12 @@ package-lock.json
 coverage/
 *.log
 .DS_Store
+
+# never track
+.planning/
+scratchpad/
+CLAUDE.md
+.gsd/
+.session/
+.temp/
+AGENTS.md
