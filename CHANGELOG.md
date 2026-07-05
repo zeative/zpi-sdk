@@ -1,5 +1,11 @@
 # zpi-sdk
 
+## 0.1.1
+
+### Patch Changes
+
+- `VERSION` export now reports the real package version (was stuck at 0.0.0).
+
 ## 0.1.0
 
 ### Minor Changes

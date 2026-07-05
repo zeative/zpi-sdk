@@ -16,3 +16,5 @@ CLAUDE.md
 AGENTS.md
 
 .env.npmrc
+.env*
+!.env.example

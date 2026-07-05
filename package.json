@@ -1,6 +1,6 @@
 {
   "name": "zpi-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Universal, zero-dependency TypeScript SDK for the Zest API (Zapi) scraper platform.",
   "license": "MIT",
   "author": "zaadevofc",
@@ -66,7 +66,7 @@
     "types:check": "node scripts/snapshot-types.mjs --check",
     "test": "vitest run",
     "changeset": "changeset",
-    "release:version": "changeset version",
+    "release:version": "changeset version && node scripts/sync-version.mjs",
     "release:publish": "npm run build && changeset publish",
     "prepare": "husky",
     "check": "npm run typecheck && npm run typecheck:legacy && npm run build && npm run smoke && npm run lint:publish && npm run lint:types && npm run dist:scan && npm run size && npm run types:check && npm run test && npm run verify:runtimes && npm run check:readme"
