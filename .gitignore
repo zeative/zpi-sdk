@@ -15,4 +15,4 @@ CLAUDE.md
 .temp/
 AGENTS.md
 
-.env
+.env.npmrc
