@@ -1,5 +1,11 @@
 # zpi-sdk
 
+## 0.1.2
+
+### Patch Changes
+
+- README: breathing room around the header logo.
+
 ## 0.1.1
 
 ### Patch Changes

@@ -189,6 +189,6 @@ declare class ZpiClient {
     toJSON(): Record<string, never>;
 }
 
-declare const VERSION: "0.1.1";
+declare const VERSION: "0.1.2";
 
 export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperParams, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };
