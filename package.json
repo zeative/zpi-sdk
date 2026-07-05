@@ -90,5 +90,13 @@
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeative/zpi-sdk.git"
+  },
+  "homepage": "https://zpi.web.id/docs",
+  "bugs": {
+    "url": "https://github.com/zeative/zpi-sdk/issues"
   }
 }
