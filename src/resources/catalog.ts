@@ -101,7 +101,10 @@ export interface Catalog {
 
 export function createCatalog(config: ResolvedConfig): Catalog {
   const base = config.baseURL.replace(/\/+$/, "");
-  const enc = encodeURIComponent;
+  // Accept both "category:scraper" (the run() project key) and bare "scraper" —
+  // the public catalog routes key on the bare slug.
+  const enc = (slug: string) =>
+    encodeURIComponent(slug.includes(":") ? slug.split(":").pop() ?? slug : slug);
 
   return {
     list(opts) {

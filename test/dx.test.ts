@@ -64,6 +64,26 @@ describe("run() forgiving endpoint", () => {
   });
 });
 
+describe("catalog forgiving slug", () => {
+  it("accepts the run() project key — strips the category prefix", async () => {
+    const f = vi.fn(async () =>
+      new Response(JSON.stringify({ content: { slug: "bark" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    const client = new ZpiClient({ apiKey: "k", fetch: f });
+    await client.catalog.get("ai:bark");
+    await client.catalog.schema("ai:bark", "synthesize");
+    await client.catalog.stats("bark");
+    const urls = f.mock.calls.map((c) => String(c[0]));
+    expect(urls[0]).toContain("/api/scrapers/bark");
+    expect(urls[0]).not.toContain("ai%3A");
+    expect(urls[1]).toContain("/scrapers/bark/endpoints/synthesize/schema");
+    expect(urls[2]).toContain("/scrapers/bark/stats");
+  });
+});
+
 describe("run() auto method", () => {
   it("flips POST→GET on 405 and succeeds", async () => {
     const f = vi
