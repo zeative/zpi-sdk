@@ -1,6 +1,6 @@
 {
   "name": "zpi-sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Universal, zero-dependency TypeScript SDK for the Zest API (Zapi) scraper platform.",
   "license": "MIT",
   "author": "zaadevofc",
