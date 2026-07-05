@@ -67,11 +67,10 @@ const data = await client.run('social:instagram', 'profile', { username: 'instag
 console.log(data)
 ```
 
-That is the whole integration. The default request method is **POST**; for GET endpoints pass `{ method: 'GET' }`:
+That is the whole integration — **no HTTP method to pick, no path templates to learn**:
 
-```typescript
-const data = await client.run('social:instagram', 'profile', { username: 'instagram' }, { method: 'GET' })
-```
+- The SDK figures out the right verb (GET/POST) automatically and remembers it per endpoint.
+- Endpoints with path params like `resolve/:url`? Just put `url` in the params object — done. `run('bypass-tools:encurtador', 'resolve', { url: '...' })` and `run('bypass-tools:encurtador', 'resolve/:url', { url: '...' })` both work.
 
 ## Build with AI
 
@@ -94,6 +93,7 @@ The `mcp` module never loads from the root entry, so the core stays lean. See th
 
 - **Zero dependencies** — no runtime deps, no node builtins; one injectable `fetch` seam powers every runtime from Node to the browser.
 - **One method, every scraper** — `client.run('social:instagram', 'profile', params)` covers the whole catalog; no per-scraper wrappers to learn.
+- **Zero ceremony** — no `{ method: 'GET' }` guessing (auto-detected + memoized per endpoint) and path params (`/:id`, `/:url`) are just regular fields in `params`.
 - **Typed error hierarchy** — every failure is a `ZpiError` subclass (`ZpiRateLimitError`, `ZpiPlanGateError`, …) with typed fields like `retryAfterSec` and `upgradeUrl`. No status-code guessing.
 - **Streaming out of the box** — `client.stream(…)` returns an async iterable of SSE events, reading via `body.getReader()` so it streams incrementally everywhere.
 - **Bulk jobs** — submit many items, `job.wait()` with progress callbacks; submits auto-reuse an `Idempotency-Key`, so retries never create duplicate jobs.

@@ -4,6 +4,7 @@
 import type { ResolvedConfig } from "../core/config";
 import { requestStream, type ReqDescriptor } from "../core/http";
 import { createSseParser, type SseEvent } from "../core/sse";
+import { normalizeEndpoint } from "../core/url";
 
 // Mirrors RunOpts minus idempotencyKey — streams aren't retried.
 export interface StreamOpts {
@@ -24,15 +25,20 @@ export async function* runStream(
   params?: Record<string, unknown>,
   opts?: StreamOpts
 ): AsyncGenerator<StreamEvent> {
+  const { slug, rest } = normalizeEndpoint(endpoint, opts?.pathRest);
+  const explicit = opts?.method;
+  const autoMethod = explicit === undefined;
   const descriptor: ReqDescriptor = {
     projectKey,
-    endpoint,
-    method: opts?.method ?? "POST",
+    endpoint: slug,
+    method:
+      explicit ?? config.methodMemo.get(`${projectKey}/${slug}`) ?? "POST",
     params,
     headers: opts?.headers,
-    pathRest: opts?.pathRest,
+    pathRest: rest,
     signal: opts?.signal,
     timeoutMs: opts?.timeoutMs,
+    autoMethod,
   };
 
   const { contentType, reader } = await requestStream(config, descriptor);

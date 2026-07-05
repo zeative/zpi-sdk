@@ -20,6 +20,9 @@ export interface ResolvedConfig {
   timeoutMs: number;
   maxRetries: number;
   baseRetryDelayMs: number;
+  // Learned HTTP verb per "projectKey/endpoint" — filled by the 405 auto-flip
+  // so users never have to pass { method } themselves.
+  methodMemo: Map<string, "GET" | "POST">;
 }
 
 export function resolveConfig(opts: ZpiClientOptions): ResolvedConfig {
@@ -34,5 +37,6 @@ export function resolveConfig(opts: ZpiClientOptions): ResolvedConfig {
     timeoutMs: opts.timeoutMs ?? 30000,
     maxRetries: opts.maxRetries ?? 2,
     baseRetryDelayMs: opts.baseRetryDelayMs ?? 200,
+    methodMemo: new Map(),
   };
 }

@@ -5,6 +5,24 @@ function trimSlashes(s: string): string {
   return s.replace(/^\/+|\/+$/g, "");
 }
 
+// Forgiving endpoint parsing: users paste endpoints as "resolve", "/resolve",
+// "resolve/:url", or "resolve/abc". First segment is the endpoint slug;
+// `:param` placeholders are dropped (the BE fills path params from the params
+// bag); literal extra segments become pathRest.
+export function normalizeEndpoint(
+  endpoint: string,
+  pathRest?: string
+): { slug: string; rest?: string } {
+  const parts = trimSlashes(endpoint).split("/").filter(Boolean);
+  const slug = parts[0] ?? "";
+  const literals = parts.slice(1).filter((p) => !p.startsWith(":"));
+  if (pathRest) {
+    const extra = trimSlashes(pathRest);
+    if (extra) literals.push(extra);
+  }
+  return { slug, rest: literals.length ? literals.join("/") : undefined };
+}
+
 export function buildUrl(
   baseURL: string,
   projectKey: string,

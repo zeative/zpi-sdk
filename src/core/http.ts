@@ -21,6 +21,44 @@ export interface ReqDescriptor {
   signal?: AbortSignal;
   timeoutMs?: number;
   idempotencyKey?: string;
+  // True when the caller did NOT pass an explicit method — a 405 then flips
+  // GET↔POST once and memoizes the learned verb in config.methodMemo.
+  autoMethod?: boolean;
+}
+
+function memoKey(d: ReqDescriptor): string {
+  return `${d.projectKey}/${d.endpoint}`;
+}
+
+// Rebuild url+init for a verb: GET carries params in the query string, POST in
+// the JSON body. Used by the initial build AND the 405 auto-flip.
+function buildRequest(
+  config: ResolvedConfig,
+  descriptor: ReqDescriptor,
+  method: "GET" | "POST"
+): { url: string; init: RequestInit } {
+  let url = buildUrl(
+    config.baseURL,
+    descriptor.projectKey,
+    descriptor.endpoint,
+    descriptor.pathRest
+  );
+  const headers: Record<string, string> = {
+    ...config.defaultHeaders,
+    ...descriptor.headers,
+    "x-api-key": config.apiKey,
+  };
+  if (descriptor.idempotencyKey) {
+    headers["Idempotency-Key"] = descriptor.idempotencyKey;
+  }
+  const init: RequestInit = { method, headers };
+  if (method === "GET") {
+    url = appendQuery(url, descriptor.params);
+  } else if (descriptor.params !== undefined) {
+    headers["content-type"] = "application/json";
+    init.body = JSON.stringify(descriptor.params);
+  }
+  return { url, init };
 }
 
 // Bare-body descriptor: either a raw absolute `url` (status GET) OR the
@@ -46,34 +84,13 @@ export async function request<T = unknown>(
   config: ResolvedConfig,
   descriptor: ReqDescriptor
 ): Promise<T> {
-  const method = descriptor.method ?? "POST";
-  let url = buildUrl(
-    config.baseURL,
-    descriptor.projectKey,
-    descriptor.endpoint,
-    descriptor.pathRest
-  );
-
-  const headers: Record<string, string> = {
-    ...config.defaultHeaders,
-    ...descriptor.headers,
-    "x-api-key": config.apiKey,
-  };
-  if (descriptor.idempotencyKey) {
-    headers["Idempotency-Key"] = descriptor.idempotencyKey;
-  }
-
-  const init: RequestInit = { method, headers };
-  if (method === "GET") {
-    url = appendQuery(url, descriptor.params);
-  } else if (descriptor.params !== undefined) {
-    headers["content-type"] = "application/json";
-    init.body = JSON.stringify(descriptor.params);
-  }
+  let method = descriptor.method ?? "POST";
+  let { url, init } = buildRequest(config, descriptor, method);
+  let flipped = false;
 
   const timeoutMs = descriptor.timeoutMs ?? config.timeoutMs;
   const maxRetries = config.maxRetries;
-  const retryable = isRetryEligible(method, descriptor.idempotencyKey);
+  let retryable = isRetryEligible(method, descriptor.idempotencyKey);
 
   for (let attempt = 0; ; attempt++) {
     try {
@@ -81,6 +98,15 @@ export async function request<T = unknown>(
       const body = await res.json().catch(() => undefined);
 
       if (!res.ok) {
+        // Wrong verb guess → flip GET↔POST once, remember the right one.
+        if (res.status === 405 && descriptor.autoMethod && !flipped) {
+          flipped = true;
+          method = method === "POST" ? "GET" : "POST";
+          ({ url, init } = buildRequest(config, descriptor, method));
+          retryable = isRetryEligible(method, descriptor.idempotencyKey);
+          config.methodMemo.set(memoKey(descriptor), method);
+          continue;
+        }
         // Decide retryability from the status BEFORE throwing the typed error.
         if (
           retryable &&
@@ -125,30 +151,19 @@ export async function requestStream(
   contentType: string;
   reader: ReadableStreamDefaultReader<Uint8Array>;
 }> {
-  const method = descriptor.method ?? "POST";
-  let url = buildUrl(
-    config.baseURL,
-    descriptor.projectKey,
-    descriptor.endpoint,
-    descriptor.pathRest
-  );
-
-  const headers: Record<string, string> = {
-    ...config.defaultHeaders,
-    ...descriptor.headers,
-    "x-api-key": config.apiKey,
-  };
-
-  const init: RequestInit = { method, headers };
-  if (method === "GET") {
-    url = appendQuery(url, descriptor.params);
-  } else if (descriptor.params !== undefined) {
-    headers["content-type"] = "application/json";
-    init.body = JSON.stringify(descriptor.params);
-  }
+  let method = descriptor.method ?? "POST";
+  let { url, init } = buildRequest(config, descriptor, method);
 
   const timeoutMs = descriptor.timeoutMs ?? config.timeoutMs;
-  const res = await fetchOnce(config, url, init, descriptor.signal, timeoutMs);
+  let res = await fetchOnce(config, url, init, descriptor.signal, timeoutMs);
+
+  // Wrong verb guess → flip GET↔POST once (pre-stream, so this is safe).
+  if (res.status === 405 && descriptor.autoMethod) {
+    method = method === "POST" ? "GET" : "POST";
+    ({ url, init } = buildRequest(config, descriptor, method));
+    config.methodMemo.set(memoKey(descriptor), method);
+    res = await fetchOnce(config, url, init, descriptor.signal, timeoutMs);
+  }
 
   if (!res.ok) {
     // Typed error precedes the stream — read the JSON body for the mapping.

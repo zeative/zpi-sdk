@@ -2,6 +2,7 @@
 // descriptor and delegates to the single core/http seam.
 import type { ResolvedConfig } from "../core/config";
 import { request, type ReqDescriptor } from "../core/http";
+import { normalizeEndpoint } from "../core/url";
 
 export interface RunOpts {
   method?: "GET" | "POST";
@@ -37,16 +38,18 @@ export function buildDescriptor(
   params?: Record<string, unknown>,
   opts?: RunOpts
 ): ReqDescriptor {
+  const { slug, rest } = normalizeEndpoint(endpoint, opts?.pathRest);
   return {
     projectKey,
-    endpoint,
+    endpoint: slug,
     method: opts?.method ?? "POST",
     params,
     headers: opts?.headers,
-    pathRest: opts?.pathRest,
+    pathRest: rest,
     signal: opts?.signal,
     timeoutMs: opts?.timeoutMs,
     idempotencyKey: opts?.idempotencyKey,
+    autoMethod: opts?.method === undefined,
   };
 }
 
@@ -57,5 +60,13 @@ export function run<T = unknown>(
   params?: Record<string, unknown>,
   opts?: RunOpts
 ): Promise<T> {
-  return request<T>(config, buildDescriptor(projectKey, endpoint, params, opts));
+  const descriptor = buildDescriptor(projectKey, endpoint, params, opts);
+  if (descriptor.autoMethod) {
+    // Reuse the verb a previous 405-flip learned for this endpoint.
+    const learned = config.methodMemo.get(
+      `${descriptor.projectKey}/${descriptor.endpoint}`
+    );
+    if (learned) descriptor.method = learned;
+  }
+  return request<T>(config, descriptor);
 }

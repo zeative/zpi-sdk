@@ -33,9 +33,19 @@ interface RunOpts {
 }
 ```
 
+## DX behaviors (additive — signature unchanged)
+
+- **Auto method**: when `opts.method` is omitted, a 405 flips GET↔POST once and the
+  learned verb is memoized per `projectKey/endpoint` on the client. Explicit
+  `opts.method` disables the flip.
+- **Forgiving endpoint**: `endpoint` may contain extra segments — `":param"`
+  placeholders are stripped (the BE fills path params from `params`), literal
+  segments become `pathRest`. `"resolve"`, `"resolve/:url"`, `"/resolve/"` are
+  all equivalent.
+
 ## Method / retry / timeout contract
 
-- Default method is **POST**.
+- Default method is **POST** (subject to auto-method above).
 - **Timeout**: per-request `timeoutMs` via `new AbortController()` + `setTimeout` (never
   `AbortSignal.timeout`), composed with the external `opts.signal`. Timeout → `ZpiTimeoutError`;
   external abort → `ZpiAbortError`; raw network failure → `ZpiNetworkError` (with `.cause`).
