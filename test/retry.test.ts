@@ -127,4 +127,29 @@ describe("retry taxonomy", () => {
     );
     expect(f).toHaveBeenCalledTimes(2);
   });
+
+  // A verb correction is not a failed attempt. Charging it to the retry budget
+  // left a later 429 with fewer tries than the caller configured.
+  it("a 405 verb correction does not spend the retry budget", async () => {
+    const f = scripted([
+      async () =>
+        json(
+          { content: { code: "method_not_allowed", expected: "POST" } },
+          405,
+          { allow: "POST" }
+        ),
+      async () => json({ content: { retryAfterSec: 0 } }, 429),
+      async () => json({ content: { retryAfterSec: 0 } }, 429),
+      async () => json(OK, 200),
+    ]);
+    const out = await request(cfg(f, { maxRetries: 2 }), {
+      projectKey: "cat:s",
+      endpoint: "ep",
+      autoMethod: true,
+      idempotencyKey: "idem-1",
+    });
+    expect(out).toEqual({ ok: 1 });
+    // 1 correction + 1 initial + 2 retries — the full budget survived the 405.
+    expect(f).toHaveBeenCalledTimes(4);
+  });
 });

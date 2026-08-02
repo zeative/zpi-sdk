@@ -2,7 +2,11 @@
 // Reads the body via getReader() (PITFALLS #5: `for await...of body` breaks
 // browser/Safari) THROUGH the single core/http seam; web-standard only.
 import type { ResolvedConfig } from "../core/config";
-import { requestStream, type ReqDescriptor } from "../core/http";
+import {
+  DEFAULT_METHOD,
+  requestStream,
+  type ReqDescriptor,
+} from "../core/http";
 import { createSseParser, type SseEvent } from "../core/sse";
 import { normalizeEndpoint } from "../core/url";
 
@@ -32,7 +36,9 @@ export async function* runStream(
     projectKey,
     endpoint: slug,
     method:
-      explicit ?? config.methodMemo.get(`${projectKey}/${slug}`) ?? "POST",
+      explicit ??
+      config.methodMemo.get(`${projectKey}/${slug}`) ??
+      DEFAULT_METHOD,
     params,
     headers: opts?.headers,
     pathRest: rest,

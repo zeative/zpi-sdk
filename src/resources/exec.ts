@@ -1,7 +1,7 @@
 // run() — the FROZEN keystone signature (codegen emit target). Builds a request
 // descriptor and delegates to the single core/http seam.
 import type { ResolvedConfig } from "../core/config";
-import { request, type ReqDescriptor } from "../core/http";
+import { DEFAULT_METHOD, request, type ReqDescriptor } from "../core/http";
 import { normalizeEndpoint } from "../core/url";
 
 export interface RunOpts {
@@ -55,7 +55,7 @@ export function buildDescriptor(
   return {
     projectKey,
     endpoint: slug,
-    method: opts?.method ?? "POST",
+    method: opts?.method ?? DEFAULT_METHOD,
     params,
     headers: opts?.headers,
     pathRest: rest,

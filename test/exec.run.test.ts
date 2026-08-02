@@ -31,10 +31,21 @@ describe("ZpiClient.run", () => {
     expect(headers.get("x-api-key")).toBe("secret-key");
   });
 
-  it("defaults to POST with JSON body", async () => {
+  // GET is the default because 175 of the catalog's 181 endpoints are GET.
+  it("defaults to GET with params in the query string", async () => {
+    const f = fakeFetch(ENVELOPE);
+    const client = new ZpiClient({ apiKey: "k", fetch: f, methodMemo: new Map() });
+    await client.run("cat:s", "ep", { a: 1 });
+    const [url, init] = f.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("GET");
+    expect(url).toContain("a=1");
+    expect(init.body).toBeUndefined();
+  });
+
+  it("POST carries params as a JSON body", async () => {
     const f = fakeFetch(ENVELOPE);
     const client = new ZpiClient({ apiKey: "k", fetch: f });
-    await client.run("cat:s", "ep", { a: 1 });
+    await client.run("cat:s", "ep", { a: 1 }, { method: "POST" });
     const [url, init] = f.mock.calls[0] as [string, RequestInit];
     expect(init.method).toBe("POST");
     expect(url).not.toContain("a=1");

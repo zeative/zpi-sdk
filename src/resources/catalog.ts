@@ -99,6 +99,19 @@ export interface Catalog {
   stats(slug: string): Promise<{ requests: number; successRate: number }>;
 }
 
+// A scraper detail response already states every endpoint's verb. Folding it
+// into the memo makes the next run() correct on its first try, for free — no
+// extra request, and it costs nothing when the caller never runs the endpoint.
+function memoizeMethods(config: ResolvedConfig, detail: ScraperDetail): void {
+  const key = `${detail.category}:${detail.slug}`;
+  for (const ep of detail.endpoints ?? []) {
+    const verb = ep.method?.toUpperCase();
+    if (verb === "GET" || verb === "POST") {
+      config.methodMemo.set(`${key}/${ep.slug}`, verb);
+    }
+  }
+}
+
 export function createCatalog(config: ResolvedConfig): Catalog {
   const base = config.baseURL.replace(/\/+$/, "");
   // Accept both "category:scraper" (the run() project key) and bare "scraper" —
@@ -113,10 +126,12 @@ export function createCatalog(config: ResolvedConfig): Catalog {
         params: opts as Record<string, unknown> | undefined,
       });
     },
-    get(slug) {
-      return requestContent<ScraperDetail>(config, {
+    async get(slug) {
+      const detail = await requestContent<ScraperDetail>(config, {
         url: `${base}/api/scrapers/${enc(slug)}`,
       });
+      if (detail) memoizeMethods(config, detail);
+      return detail;
     },
     categories() {
       return requestContent<Category[]>(config, {

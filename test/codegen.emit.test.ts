@@ -101,6 +101,34 @@ describe("emitScraperMap", () => {
 		expect(out).toContain("result: unknown");
 	});
 
+	// Baking the verb in is what lets a typed caller skip verb discovery entirely.
+	it("emits a runtime ZPI_METHODS map carrying each declared verb", () => {
+		const out = emitScraperMap(
+			[
+				{
+					category: "ai",
+					scraper: "felo",
+					endpoints: [
+						{ slug: "chat", schema: { fields: [] }, method: "POST" },
+						{ slug: "search", schema: { fields: [] }, method: "GET" },
+					],
+				},
+			],
+			{ baseURL: "https://api.zpi.web.id" }
+		);
+		expect(out).toContain("export const ZPI_METHODS");
+		expect(out).toContain('chat: "POST"');
+		expect(out).toContain('search: "GET"');
+	});
+
+	it("defaults a missing verb to GET rather than emitting undefined", () => {
+		const out = emitScraperMap(scrapers, {
+			baseURL: "https://api.zpi.web.id",
+		});
+		expect(out).toContain('profile: "GET"');
+		expect(out).not.toContain("undefined");
+	});
+
 	it("header notes generated-by + the source baseURL", () => {
 		const out = emitScraperMap(scrapers, {
 			baseURL: "https://api.zpi.web.id",

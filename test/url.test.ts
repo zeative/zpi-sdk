@@ -48,17 +48,22 @@ describe("appendQuery", () => {
     expect(out).toContain("n=3");
   });
 
-  it("drops undefined and nested object/array values", () => {
+  // Nested values used to be dropped, which deleted a caller's param and let the
+  // request "succeed" with missing input. Encoding them keeps the loss visible.
+  it("drops undefined/null but JSON-encodes nested object/array values", () => {
     const out = appendQuery("https://api.zpi.web.id/v1/x/y", {
       a: "1",
       b: undefined,
+      e: null,
       c: { nested: true },
       d: [1, 2],
     });
-    expect(out).toContain("a=1");
-    expect(out).not.toContain("b=");
-    expect(out).not.toContain("c=");
-    expect(out).not.toContain("d=");
+    const qs = new URL(out).searchParams;
+    expect(qs.get("a")).toBe("1");
+    expect(qs.has("b")).toBe(false);
+    expect(qs.has("e")).toBe(false);
+    expect(qs.get("c")).toBe('{"nested":true}');
+    expect(qs.get("d")).toBe("[1,2]");
   });
 
   it("returns url unchanged when no params", () => {

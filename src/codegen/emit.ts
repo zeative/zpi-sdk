@@ -5,6 +5,9 @@ import type { EndpointSchema, SchemaField } from "../resources/catalog";
 export interface EmitEndpoint {
 	slug: string;
 	schema: EndpointSchema;
+	/** The endpoint's declared verb. Baked into ZPI_METHODS so a typed caller
+	 *  never has to discover it with a 405. */
+	method?: string;
 }
 
 export interface EmitScraper {
@@ -75,10 +78,29 @@ export function emitScraperMap(
 	lines.push(`// source: ${opts.baseURL}`);
 	lines.push("// regenerate with: npx zpi codegen");
 	lines.push("");
-	// Without a top-level export the file is an ambient module DECLARATION that
-	// shadows the real package types; `export {}` makes it an augmentation.
-	lines.push("export {};");
+	// Each endpoint's declared verb, so `client.useMethods(ZPI_METHODS)` removes
+	// verb discovery entirely — no 405 probe, one request per call.
+	lines.push(
+		"/** Pass to `client.useMethods(ZPI_METHODS)` so no call has to discover its verb. */"
+	);
+	lines.push(
+		'export const ZPI_METHODS: Record<string, Record<string, "GET" | "POST">> = {'
+	);
+	for (const s of sorted) {
+		const eps = [...s.endpoints].sort((a, b) => a.slug.localeCompare(b.slug));
+		const entries = eps
+			.map((ep) => {
+				const verb = (ep.method ?? "GET").toUpperCase();
+				return `${propKey(ep.slug)}: "${verb === "POST" ? "POST" : "GET"}"`;
+			})
+			.join(", ");
+		lines.push(`\t"${s.category}:${s.scraper}": { ${entries} },`);
+	}
+	lines.push("};");
 	lines.push("");
+	// A top-level export (above) also keeps this file a module AUGMENTATION —
+	// without one it would be an ambient DECLARATION that shadows the real
+	// package types.
 	lines.push('declare module "zpi-sdk" {');
 	lines.push("\tinterface ScraperMap {");
 	for (const s of sorted) {

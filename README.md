@@ -74,7 +74,7 @@ console.log(data)
 
 That is the whole integration — **no HTTP method to pick, no path templates to learn**:
 
-- The SDK figures out the right verb (GET/POST) automatically and remembers it per endpoint.
+- The SDK sends the right verb (GET/POST) on the first request and remembers it per endpoint, process-wide. Pass codegen's table to `client.useMethods(ZPI_METHODS)` and it never has to ask.
 - Endpoints with path params like `resolve/:url`? Just put `url` in the params object — done. `run('bypass-tools:encurtador', 'resolve', { url: '...' })` and `run('bypass-tools:encurtador', 'resolve/:url', { url: '...' })` both work.
 
 ## Build with AI

@@ -25,6 +25,21 @@ export class ZpiClient {
     this.bulk = createBulk(this.#config);
   }
 
+  // Adopt codegen's baked verb table (`import { ZPI_METHODS } from "./zpi-gen"`),
+  // so every call goes out with the right method on the first request instead of
+  // discovering it from a 405.
+  useMethods(methods: Record<string, Record<string, string>>): this {
+    for (const [projectKey, endpoints] of Object.entries(methods ?? {})) {
+      for (const [endpoint, verb] of Object.entries(endpoints ?? {})) {
+        const m = String(verb).toUpperCase();
+        if (m === "GET" || m === "POST") {
+          this.#config.methodMemo.set(`${projectKey}/${endpoint}`, m);
+        }
+      }
+    }
+    return this;
+  }
+
   // K/E infer as literals so codegen-merged ScraperMap entries narrow `params`;
   // without codegen they collapse to string and params stays a plain record.
   run<T = unknown, K extends string = string, E extends string = string>(

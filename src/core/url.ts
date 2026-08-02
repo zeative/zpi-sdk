@@ -46,8 +46,10 @@ export function appendQuery(
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) continue;
-    if (typeof value === "object") continue; // drop nested objects/arrays
-    sp.append(key, String(value));
+    // Objects/arrays used to be dropped here. On a GET that silently deleted a
+    // caller's param and the request "succeeded" with missing input — worse than
+    // an error. JSON-encode instead: nothing leaves without being sent.
+    sp.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
   }
   const qs = sp.toString();
   if (!qs) return url;

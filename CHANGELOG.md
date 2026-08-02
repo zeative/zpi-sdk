@@ -1,5 +1,20 @@
 # zpi-sdk
 
+## 0.3.0
+
+### Minor Changes
+
+- Stop the 405 probe. `run()` and `stream()` now default to **GET** instead of POST — 175 of the catalog's 181 endpoints are GET, so the old default made ~97% of cold calls spend a wasted 405 round trip before correcting themselves. On the API side those throwaway 405s were charged to your monthly quota, consumed rate-limit budget, inflated endpoint request counts, and fired a `request.error` webhook; the backend no longer does any of that, and now accepts either verb on a read-only endpoint.
+
+  - **GET by default**, and it is the safe direction to be wrong in: a GET→POST correction moves params into a JSON body intact, where POST→GET had to flatten them into a query string.
+  - **405s are resolved from what the server said** — `content.expected`, else the RFC 9110 `Allow` header — instead of blind-toggling GET↔POST. A verb the SDK cannot speak (`PUT`, …) now surfaces the error instead of burning a second request on a guess.
+  - **The learned-verb memo is process-wide**, not per client. Under serverless / per-request client construction it never warmed before, so every single call re-paid the correction. Pass `methodMemo` in the client options to opt out.
+  - **`client.useMethods(ZPI_METHODS)`** adopts codegen's baked verb table, and `catalog.get(slug)` seeds the memo as a side effect of a read you were already doing — either way no call has to discover its verb.
+  - **Codegen emits `ZPI_METHODS`**, a runtime map of every endpoint's declared verb, alongside the existing `ScraperMap` type augmentation.
+  - **`ZpiMethodNotAllowedError.expected`** exposes the verb the endpoint wants, so a hard 405 is actionable without parsing `.message`.
+  - **`appendQuery` no longer silently drops object/array params.** They were deleted from a GET with no error and the request "succeeded" with missing input; they are now JSON-encoded.
+  - A 405 verb correction no longer spends an attempt from `maxRetries`, and the stream path no longer leaks the 405 response body before re-fetching.
+
 ## 0.2.0
 
 ### Minor Changes

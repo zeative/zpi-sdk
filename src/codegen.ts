@@ -121,13 +121,15 @@ export async function generate(
 	const scrapers: EmitScraper[] = [];
 	for (const ref of refs) {
 		const detail = await catalog.get(ref.slug);
-		const epSlugs = (detail.endpoints ?? []).map((e) => e.slug);
+		const eps = detail.endpoints ?? [];
+		const epSlugs = eps.map((e) => e.slug);
 		const schemas = await pooled(epSlugs, SCHEMA_POOL, (eslug) =>
 			fetchSchema(catalog, ref.slug, eslug)
 		);
-		const endpoints = epSlugs.map((slug, i) => ({
-			slug,
+		const endpoints = eps.map((e, i) => ({
+			slug: e.slug,
 			schema: schemas[i],
+			method: e.method,
 		}));
 		endpointCount += endpoints.length;
 		scrapers.push({

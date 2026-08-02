@@ -81,6 +81,26 @@ describe("fromResponse — typed error mapping per contract row", () => {
     expect(e.raw).toEqual(fx.methodNotAllowed.body);
   });
 
+  it("405 surfaces the expected verb from content.expected", () => {
+    const e = fromResponse(405, {
+      content: { code: "method_not_allowed", expected: "get" },
+      message: "Method POST not allowed. Use GET.",
+    }) as ZpiMethodNotAllowedError;
+    expect(e.expected).toBe("GET");
+  });
+
+  it("405 falls back to the Allow header when the body says nothing", () => {
+    const e = fromResponse(405, { message: "nope" }, {
+      allow: "POST, OPTIONS",
+    }) as ZpiMethodNotAllowedError;
+    expect(e.expected).toBe("POST");
+  });
+
+  it("405 with neither signal leaves expected undefined", () => {
+    const e = fromResponse(405, { message: "nope" }) as ZpiMethodNotAllowedError;
+    expect(e.expected).toBeUndefined();
+  });
+
   it("429 rate_limit → ZpiRateLimitError (body + Retry-After header)", () => {
     const e = fromResponse(
       fx.rateLimit.status,

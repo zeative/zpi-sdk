@@ -108,11 +108,37 @@ export class ZpiNotFoundError extends ZpiError {
 }
 
 export class ZpiMethodNotAllowedError extends ZpiError {
-  constructor(body: unknown, status: number, requestId?: string) {
+  /** The verb the BE says this endpoint wants — from `content.expected`, else the
+   *  RFC 9110 `Allow` header. Actionable without parsing `.message`. */
+  expected?: string;
+  constructor(
+    body: unknown,
+    status: number,
+    headers?: HeaderBag,
+    requestId?: string
+  ) {
     super(msgOf(body, "Method not allowed"), status, body, requestId);
     this.name = "ZpiMethodNotAllowedError";
+    this.expected = expectedMethodFrom(body, headers);
     Object.setPrototypeOf(this, ZpiMethodNotAllowedError.prototype);
   }
+}
+
+/** Read the verb a 405 asks for: `content.expected` first (our envelope), then
+ *  `Allow` (every RFC-compliant server, incl. proxies that answer before us). */
+export function expectedMethodFrom(
+  body: unknown,
+  headers?: HeaderBag
+): string | undefined {
+  const b = isObj(body) ? body : {};
+  const content = isObj(b.content) ? b.content : {};
+  if (typeof content.expected === "string" && content.expected) {
+    return content.expected.toUpperCase();
+  }
+  // Allow is a comma-separated list; the first entry is the one to try.
+  const allow = getHeader(headers, "allow");
+  const first = allow?.split(",")[0]?.trim();
+  return first ? first.toUpperCase() : undefined;
 }
 
 export class ZpiRateLimitError extends ZpiError {
@@ -310,7 +336,7 @@ export function fromResponse(
     case 404:
       return new ZpiNotFoundError(body, status, reqId);
     case 405:
-      return new ZpiMethodNotAllowedError(body, status, reqId);
+      return new ZpiMethodNotAllowedError(body, status, headers, reqId);
     case 422:
       return new ZpiIdempotencyError(body, status, reqId);
     case 429:

@@ -64,6 +64,28 @@ describe("catalog.get", () => {
       ZpiNotFoundError
     );
   });
+
+  // The detail response already states each verb — folding it into the memo makes
+  // the next run() right on its first request, at no extra network cost.
+  it("seeds the method memo from the endpoints it returns", async () => {
+    const detail = {
+      slug: "acme",
+      category: "tools",
+      endpoints: [
+        { slug: "search", method: "GET" },
+        { slug: "chat", method: "post" },
+        { slug: "weird", method: "PATCH" },
+      ],
+    };
+    const f = fakeContentFetch(detail);
+    const memo = new Map<string, "GET" | "POST">();
+    const config = resolveConfig({ apiKey: "k", fetch: f, methodMemo: memo });
+    await createCatalog(config).get("acme");
+    expect(memo.get("tools:acme/search")).toBe("GET");
+    expect(memo.get("tools:acme/chat")).toBe("POST");
+    // A verb run() cannot speak is not memoized — it would only mislead.
+    expect(memo.has("tools:acme/weird")).toBe(false);
+  });
 });
 
 describe("catalog.categories", () => {
