@@ -11,6 +11,14 @@ export interface RunOpts {
   idempotencyKey?: string;
   headers?: Record<string, string>;
   pathRest?: string;
+  /**
+   * Max age in seconds you will accept for a cached result. Only ever asks for
+   * something FRESHER than the endpoint's own cache lifetime, never staler.
+   * A paid capability: the server clamps it to your plan's floor and the
+   * endpoint's lifetime, and rejects it with ZpiPlanGateError on plans without
+   * one. `0` means always fetch fresh.
+   */
+  ttl?: number;
 }
 
 // Codegen attaches concrete return types here via `declare module` merging.
@@ -52,11 +60,16 @@ export function buildDescriptor(
   opts?: RunOpts
 ): ReqDescriptor {
   const { slug, rest } = normalizeEndpoint(endpoint, opts?.pathRest);
+  // Rides in the param bag, not its own transport: /v1 merges query and body
+  // into one input and strips `ttl` there, so GET and POST both work unchanged
+  // and a 405 verb-flip carries it across with the rest of the params.
+  const withTtl =
+    opts?.ttl === undefined ? params : { ...params, ttl: opts.ttl };
   return {
     projectKey,
     endpoint: slug,
     method: opts?.method ?? DEFAULT_METHOD,
-    params,
+    params: withTtl,
     headers: opts?.headers,
     pathRest: rest,
     signal: opts?.signal,

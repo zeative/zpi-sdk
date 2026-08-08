@@ -8,6 +8,14 @@ interface RunOpts {
     idempotencyKey?: string;
     headers?: Record<string, string>;
     pathRest?: string;
+    /**
+     * Max age in seconds you will accept for a cached result. Only ever asks for
+     * something FRESHER than the endpoint's own cache lifetime, never staler.
+     * A paid capability: the server clamps it to your plan's floor and the
+     * endpoint's lifetime, and rejects it with ZpiPlanGateError on plans without
+     * one. `0` means always fetch fresh.
+     */
+    ttl?: number;
 }
 interface ScraperMap {
 }
