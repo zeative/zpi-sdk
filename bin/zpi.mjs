@@ -5,10 +5,10 @@ import { pathToFileURL } from "node:url";
 
 const DEFAULT_BASE = "https://api.zpi.web.id";
 const DEFAULT_OUT = "./zpi-sdk.gen.d.ts";
-const KNOWN_FLAGS = new Set(["base", "out", "filter", "key"]);
+const KNOWN_FLAGS = new Set(["base", "out", "filter", "key", "scan"]);
 
 const USAGE =
-	"usage: zpi codegen [--base <url>] [--out <path>] [--filter <cat|slug>] [--key <apiKey>]";
+	"usage: zpi codegen [--base <url>] [--out <path>] [--filter <cat|slug>] [--scan <dir>] [--key <apiKey>]";
 
 // Pure flag parser — no I/O — so it's unit-testable without spawning the bin.
 export function parseArgs(argv) {
@@ -42,6 +42,7 @@ export function parseArgs(argv) {
 	const resolved = { command, base, out };
 	if (flags.filter !== undefined) resolved.filter = flags.filter;
 	if (flags.key !== undefined) resolved.key = flags.key;
+	if (flags.scan !== undefined) resolved.scan = flags.scan;
 	return resolved;
 }
 
@@ -60,10 +61,16 @@ async function main() {
 			out: parsed.out,
 			filter: parsed.filter,
 			key: parsed.key,
+			scan: parsed.scan,
 		});
 		process.stdout.write(
 			`zpi codegen: wrote ${r.written} (${r.scrapers} scrapers, ${r.endpoints} endpoints)\n`
 		);
+		if (r.unknownKeys?.length) {
+			process.stdout.write(
+				`zpi codegen: called but not in the catalog — ${r.unknownKeys.join(", ")}\n`
+			);
+		}
 	} catch (err) {
 		process.stderr.write(`zpi codegen failed: ${err.message}\n`);
 		process.exit(1);

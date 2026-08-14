@@ -13,6 +13,7 @@ import {
 	type EndpointSchema,
 	createCatalog,
 } from "./resources/catalog";
+import { hitEndpoints, scanSource } from "./codegen/scan";
 
 export interface GenerateOptions {
 	baseURL: string;
@@ -20,15 +21,20 @@ export interface GenerateOptions {
 	fetch?: typeof globalThis.fetch;
 	filter?: string;
 	key?: string;
+	/** Emit only the scrapers/endpoints this directory actually calls. */
+	scan?: string;
 }
 
 export interface GenerateResult {
 	written: string;
 	scrapers: number;
 	endpoints: number;
+	/** Project keys found by --scan that the catalog does not know about. */
+	unknownKeys?: string[];
 }
 
 const SCHEMA_POOL = 5;
+const DEFAULT_OUT = "./zpi-sdk.gen.d.ts";
 
 interface ScraperRef {
 	slug: string;
@@ -117,11 +123,29 @@ export async function generate(
 		refs = refs.filter((r) => matchesFilter(r, opts.filter as string));
 	}
 
+	// --scan keeps only what the codebase calls, so a 544-endpoint catalog does not become a
+	// 544-endpoint declaration file for the two endpoints a project actually uses.
+	const hits = opts.scan === undefined ? undefined : scanSource(opts.scan);
+	let unknownKeys: string[] | undefined;
+	if (hits !== undefined) {
+		const matched = new Set<string>();
+		refs = refs.filter((ref) => {
+			if (hitEndpoints(hits, ref.category, ref.slug) === undefined) return false;
+			matched.add(`${ref.category}:${ref.slug}`);
+			matched.add(ref.slug);
+			return true;
+		});
+		unknownKeys = [...hits.keys()].filter((key) => !matched.has(key));
+	}
+
 	let endpointCount = 0;
 	const scrapers: EmitScraper[] = [];
 	for (const ref of refs) {
 		const detail = await catalog.get(ref.slug);
-		const eps = detail.endpoints ?? [];
+		const wanted = hits === undefined ? undefined : hitEndpoints(hits, ref.category, ref.slug);
+		const eps = (detail.endpoints ?? []).filter(
+			(e) => wanted === undefined || wanted.has(e.slug)
+		);
 		const epSlugs = eps.map((e) => e.slug);
 		const schemas = await pooled(epSlugs, SCHEMA_POOL, (eslug) =>
 			fetchSchema(catalog, ref.slug, eslug)
@@ -139,7 +163,15 @@ export async function generate(
 		});
 	}
 
-	const source = emitScraperMap(scrapers, { baseURL: opts.baseURL });
+	const command = [
+		"npx zpi codegen",
+		opts.scan === undefined ? "" : `--scan ${opts.scan}`,
+		opts.filter === undefined ? "" : `--filter ${opts.filter}`,
+		opts.out === DEFAULT_OUT ? "" : `--out ${opts.out}`,
+	]
+		.filter((part) => part.length > 0)
+		.join(" ");
+	const source = emitScraperMap(scrapers, { baseURL: opts.baseURL, command });
 	mkdirSync(dirname(opts.out), { recursive: true });
 	writeFileSync(opts.out, source, "utf8");
 
@@ -147,5 +179,6 @@ export async function generate(
 		written: opts.out,
 		scrapers: scrapers.length,
 		endpoints: endpointCount,
+		...(unknownKeys !== undefined && unknownKeys.length > 0 ? { unknownKeys } : {}),
 	};
 }

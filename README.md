@@ -104,7 +104,7 @@ The `mcp` module never loads from the root entry, so the core stays lean. See th
 - **Bulk jobs** — submit many items, `job.wait()` with progress callbacks; submits auto-reuse an `Idempotency-Key`, so retries never create duplicate jobs.
 - **Public catalog discovery** — list scrapers, categories, endpoint schemas, and stats without auth.
 - **Webhook verification built in** — `zpi-sdk/webhooks` verifies `X-Zpi-Signature` (HMAC-SHA256, timing-safe) and returns typed events.
-- **Typed codegen** — `npx zpi codegen` generates per-scraper bindings from the live catalog, narrowing `run()`'s params with full autocomplete.
+- **Typed codegen** — `npx zpi codegen --scan .` reads your source, finds the scrapers you actually call, and generates bindings for just those; `run()` then returns a typed result with no annotation at the call site.
 - **Safe retries** — only network errors and `429/502/503/504` are retried (exponential backoff + jitter); a POST is never blind-retried without an `idempotencyKey`. API key redacted from every error and log.
 
 ## Install
@@ -200,14 +200,28 @@ const event = await parseWebhook(rawBody, {
 
 ### Typed codegen
 
-Generate per-scraper bindings from the **live** catalog — `run()`'s params become fully autocompleted:
+Generate per-scraper bindings from the **live** catalog — `run()`'s params and result become fully
+typed, with no annotation at the call site:
 
 ```bash
-npx zpi codegen                 # → ./zpi-sdk.gen.d.ts
+npx zpi codegen --scan .        # only the scrapers your code calls → ./zpi-sdk.gen.d.ts
+npx zpi codegen                 # the whole catalog
 npx zpi codegen --out ./types/zpi.gen.d.ts --filter social
 ```
 
-The output is **types-only** (zero runtime import); regenerate any time the catalog drifts.
+`--scan <dir>` reads your source for `run("category:scraper", "endpoint")` calls and emits only
+those. On a 500-endpoint catalog that is the difference between a 160 KB declaration file and a
+600-byte one. Calls it cannot resolve statically — a variable endpoint, a computed key — are simply
+not emitted, and any scraper key you call that the catalog does not know is reported:
+
+```
+zpi codegen: wrote ./zpi-sdk.gen.d.ts (1 scrapers, 2 endpoints)
+zpi codegen: called but not in the catalog — typo:scraper
+```
+
+The output is **types-only** (zero runtime import); regenerate any time the catalog drifts. The
+generated header records the exact command used, so a `--scan` file is never regenerated as the
+full catalog by accident.
 
 ## Error handling
 

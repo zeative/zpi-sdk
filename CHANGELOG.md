@@ -1,5 +1,20 @@
 # zpi-sdk
 
+## 0.5.0
+
+### Minor Changes
+
+- `zpi codegen --scan <dir>` emits only the scrapers your code actually calls.
+
+  Generating the whole catalog produced a 160 KB declaration file for projects using two endpoints.
+  `--scan` reads the source for `run("category:scraper", "endpoint")` / `stream(…)` calls with literal
+  arguments and keeps just those — 600 bytes for the same project.
+
+  Calls that cannot be resolved statically (a variable endpoint, a computed key) are not emitted, and
+  scraper keys the catalog does not know are reported so a typo does not fail silently. The generated
+  header now records the exact command, so a scanned file is never regenerated as the full catalog by
+  accident.
+
 ## 0.4.0
 
 ### Minor Changes
