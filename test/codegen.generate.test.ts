@@ -119,9 +119,8 @@ describe("generate()", () => {
 		expect(src).toContain('"misc:loose"');
 		expect(src).toContain("params: Record<string, unknown>");
 
-		// result: unknown on every endpoint (3)
-		const resultCount = (src.match(/result: unknown/g) ?? []).length;
-		expect(resultCount).toBe(3);
+		// Codegen describes params only; results stay untyped unless a consumer declares them.
+		expect(src).not.toContain("result:");
 
 		// NO runtime value import / require.
 		for (const line of src.split("\n")) {

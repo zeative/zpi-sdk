@@ -4,11 +4,12 @@
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_BASE = "https://api.zpi.web.id";
-const DEFAULT_OUT = "./zpi-sdk.gen.d.ts";
+const DEFAULT_OUT = "./zpi.d.ts";
 const KNOWN_FLAGS = new Set(["base", "out", "filter", "key", "scan"]);
+const KNOWN_BOOLS = new Set(["infer"]);
 
 const USAGE =
-	"usage: zpi codegen [--base <url>] [--out <path>] [--filter <cat|slug>] [--scan <dir>] [--key <apiKey>]";
+	"usage: zpi codegen [--base <url>] [--out <path>] [--filter <cat|slug>] [--scan <dir>] [--infer] [--key <apiKey>]";
 
 // Pure flag parser — no I/O — so it's unit-testable without spawning the bin.
 export function parseArgs(argv) {
@@ -27,6 +28,12 @@ export function parseArgs(argv) {
 				name = tok.slice(2);
 				value = argv[++i];
 			}
+			if (KNOWN_BOOLS.has(name)) {
+				// Boolean flag: it never consumes the next token.
+				if (eq === -1 && value !== undefined) i--;
+				flags[name] = eq === -1 ? true : value !== "false";
+				continue;
+			}
 			if (!KNOWN_FLAGS.has(name) || value === undefined) {
 				throw new Error(`unknown or malformed flag: ${tok}`);
 			}
@@ -43,6 +50,7 @@ export function parseArgs(argv) {
 	if (flags.filter !== undefined) resolved.filter = flags.filter;
 	if (flags.key !== undefined) resolved.key = flags.key;
 	if (flags.scan !== undefined) resolved.scan = flags.scan;
+	if (flags.infer !== undefined) resolved.infer = flags.infer;
 	return resolved;
 }
 
@@ -62,6 +70,7 @@ async function main() {
 			filter: parsed.filter,
 			key: parsed.key,
 			scan: parsed.scan,
+			infer: parsed.infer,
 		});
 		process.stdout.write(
 			`zpi codegen: wrote ${r.written} (${r.scrapers} scrapers, ${r.endpoints} endpoints)\n`

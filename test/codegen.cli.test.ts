@@ -8,7 +8,7 @@ describe("parseArgs defaults", () => {
 		expect(r).toEqual({
 			command: "codegen",
 			base: "https://api.zpi.web.id",
-			out: "./zpi-sdk.gen.d.ts",
+			out: "./zpi.d.ts",
 		});
 	});
 
@@ -16,7 +16,7 @@ describe("parseArgs defaults", () => {
 		const r = parseArgs(["codegen"]);
 		expect(r.command).toBe("codegen");
 		expect(r.base).toBe("https://api.zpi.web.id");
-		expect(r.out).toBe("./zpi-sdk.gen.d.ts");
+		expect(r.out).toBe("./zpi.d.ts");
 	});
 });
 

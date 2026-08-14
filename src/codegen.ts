@@ -34,7 +34,7 @@ export interface GenerateResult {
 }
 
 const SCHEMA_POOL = 5;
-const DEFAULT_OUT = "./zpi-sdk.gen.d.ts";
+const DEFAULT_OUT = "./zpi.d.ts";
 
 interface ScraperRef {
 	slug: string;

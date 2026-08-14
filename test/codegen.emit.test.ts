@@ -98,7 +98,8 @@ describe("emitScraperMap", () => {
 		expect(out).toContain('"social:instagram"');
 		expect(out).toContain("profile:");
 		expect(out).toContain("params:");
-		expect(out).toContain("result: unknown");
+		// Results are never emitted — a scraper's response shape is not zpi's to promise.
+		expect(out).not.toContain("result:");
 	});
 
 	// Baking the verb in is what lets a typed caller skip verb discovery entirely.

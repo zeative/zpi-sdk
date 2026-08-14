@@ -1,5 +1,26 @@
 # zpi-sdk
 
+## 0.6.0
+
+### Minor Changes
+
+- `zpi codegen --scan <dir>` emits only the scrapers your code calls, and codegen now describes
+  **parameters only**.
+
+  Generating the whole catalog produced a 160 KB declaration file for projects using two endpoints.
+  `--scan` reads the source for `run("category:scraper", "endpoint")` / `stream(…)` calls with literal
+  arguments and keeps just those — 600 bytes for the same project. Calls it cannot resolve statically
+  are not emitted, and scraper keys the catalog does not know are reported so a typo does not fail
+  silently.
+
+  Results are deliberately **not** generated. A scraper's response shape belongs to the upstream site:
+  zpi cannot promise it and it drifts. An undeclared result is now `any` instead of `unknown`, so an
+  untyped response never forces a cast. Declare `result` in your own `ScraperMap` augmentation to opt
+  into real typing.
+
+  The default output path is now `./zpi.d.ts` (was `./zpi-sdk.gen.d.ts`), and the generated header
+  records the exact command used.
+
 ## 0.5.0
 
 ### Minor Changes

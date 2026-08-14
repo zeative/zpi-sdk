@@ -27,8 +27,13 @@ export interface RunOpts {
 // biome-ignore lint/suspicious/noEmptyInterface: declaration-merging target for codegen
 export interface ScraperMap {}
 
-// Narrow the result of run() from ScraperMap when codegen has merged an entry;
-// otherwise fall back to `unknown`. Keeps the frozen signature additive.
+// A scraper's response shape belongs to the upstream site, not to zpi — it is unknowable up front
+// and it drifts. So codegen never emits a `result`, and an undeclared one is `any` rather than
+// `unknown`: an untyped result must not force a cast at every call site. Declare `result` in your
+// own ScraperMap augmentation to opt into real typing.
+// biome-ignore lint/suspicious/noExplicitAny: deliberate — see above
+type UntypedResult = any;
+
 export type ScraperResult<
   K extends string,
   E extends string,
@@ -36,9 +41,9 @@ export type ScraperResult<
   ? E extends keyof ScraperMap[K]
     ? ScraperMap[K][E] extends { result: infer R }
       ? R
-      : unknown
-    : unknown
-  : unknown;
+      : UntypedResult
+    : UntypedResult
+  : UntypedResult;
 
 // Narrow run()'s params from ScraperMap when codegen has merged an entry;
 // otherwise stay a plain record. Same additive pattern as ScraperResult.

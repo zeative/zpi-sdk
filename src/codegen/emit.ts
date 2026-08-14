@@ -111,7 +111,7 @@ export function emitScraperMap(
 		);
 		const entries = eps.map(
 			(ep) =>
-				`${propKey(ep.slug)}: { params: ${emitParams(ep.schema.fields)}; result: unknown };`
+				`${propKey(ep.slug)}: { params: ${emitParams(ep.schema.fields)} };`
 		);
 		lines.push(
 			`\t\t"${s.category}:${s.scraper}": { ${entries.join(" ")} };`
