@@ -193,11 +193,11 @@ declare class ZpiClient {
     readonly bulk: Bulk;
     constructor(options: ZpiClientOptions);
     useMethods(methods: Record<string, Record<string, string>>): this;
-    run<T = unknown, K extends string = string, E extends string = string>(projectKey: K, endpoint: E, params?: ScraperParams<K, E>, opts?: RunOpts): Promise<T>;
+    run<K extends string = string, E extends string = string, T = ScraperResult<K, E>>(projectKey: K, endpoint: E, params?: ScraperParams<K, E>, opts?: RunOpts): Promise<T>;
     stream<K extends string = string, E extends string = string>(projectKey: K, endpoint: E, params?: ScraperParams<K, E>, opts?: StreamOpts): AsyncIterable<StreamEvent>;
     toJSON(): Record<string, never>;
 }
 
-declare const VERSION: "0.3.0";
+declare const VERSION: "0.4.0";
 
 export { type Bulk, type BulkItem, type BulkItemResult, type BulkItemStatus, BulkJob, type BulkJobData, type BulkJobStatus, type BulkSubmitOpts, type BulkWaitOpts, type Catalog, type CatalogList, type CatalogListItem, type CatalogListOpts, type Category, type EndpointSchema, type RunOpts, type SchemaField, type ScraperDetail, type ScraperEndpoint, type ScraperMap, type ScraperParams, type ScraperResult, type SseEvent, type StreamEvent, type StreamOpts, VERSION, ZpiClient, ZpiClientOptions };

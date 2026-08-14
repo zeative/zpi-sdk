@@ -8,17 +8,28 @@
 ## Signature
 
 ```ts
-client.run<T = unknown>(
-  projectKey: string,        // "category:scraper" (preferred) or bare "scraper" (legacy)
-  endpoint: string,          // endpoint slug
-  params?: Record<string, unknown>, // merged into query (GET) or JSON body (POST)
+client.run<K extends string, E extends string, T = ScraperResult<K, E>>(
+  projectKey: K,                // "category:scraper" (preferred) or bare "scraper" (legacy)
+  endpoint: E,                  // endpoint slug
+  params?: ScraperParams<K, E>, // merged into query (GET) or JSON body (POST)
   opts?: RunOpts
 ): Promise<T>;
 ```
 
 Returns the **unwrapped** `data` from the BE envelope `{ project, data, timestamp }`
-(i.e. only `.data`). Typed `unknown` by default; narrowed via `ScraperMap` when codegen
-has emitted entries.
+(i.e. only `.data`). Narrowed from `ScraperMap` when codegen has merged an entry for
+`K`/`E`; `unknown` otherwise.
+
+`T` is declared **last** because a type-parameter default may only reference parameters
+declared before it (`TS2744`) — it cannot sit first and still read `K`/`E`.
+
+An explicit `client.run<MyShape>(…)` therefore no longer compiles: `MyShape` would bind
+to `K`, which is constrained to `string`. Annotate the variable instead — inference fills
+`T` from the target type:
+
+```ts
+const data: MyShape = await client.run("category:scraper", "endpoint")
+```
 
 ## `opts` shape (`RunOpts`) — FROZEN
 

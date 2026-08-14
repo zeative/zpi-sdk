@@ -1,5 +1,24 @@
 # zpi-sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- beff2ec: Add `ttl` to `RunOpts` — request a cache max-age in seconds. Paid plans only; the server clamps it to your plan's floor and the endpoint's own cache lifetime, and returns `ZpiPlanGateError` on plans without one.
+- `run()` now infers its result from `ScraperMap` instead of returning `unknown`.
+
+  `ScraperResult<K, E>` existed and was exported but never reached `run`, so codegen could
+  narrow params while every result stayed `unknown`. `run`'s type parameters are reordered to
+  `<K, E, T = ScraperResult<K, E>>` — a default may only reference parameters declared before
+  it, so `T` has to come last.
+
+  **Breaking:** `client.run<MyShape>(…)` no longer compiles, because `MyShape` binds to `K`
+  (constrained to `string`). Annotate the variable instead:
+
+  ```ts
+  const data: MyShape = await client.run("category:scraper", "endpoint");
+  ```
+
 ## 0.3.0
 
 ### Minor Changes

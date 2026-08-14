@@ -1,6 +1,11 @@
 import { resolveConfig, type ZpiClientOptions } from "./core/config";
 import type { ResolvedConfig } from "./core/config";
-import { run, type RunOpts, type ScraperParams } from "./resources/exec";
+import {
+  run,
+  type RunOpts,
+  type ScraperParams,
+  type ScraperResult,
+} from "./resources/exec";
 import {
   runStream,
   type StreamEvent,
@@ -40,9 +45,10 @@ export class ZpiClient {
     return this;
   }
 
-  // K/E infer as literals so codegen-merged ScraperMap entries narrow `params`;
-  // without codegen they collapse to string and params stays a plain record.
-  run<T = unknown, K extends string = string, E extends string = string>(
+  // K/E infer as literals so codegen-merged ScraperMap entries narrow both `params` and the result;
+  // without codegen they collapse to string, params stays a plain record and T falls back to unknown.
+  // T is declared last because a type-param default may only reference params declared before it.
+  run<K extends string = string, E extends string = string, T = ScraperResult<K, E>>(
     projectKey: K,
     endpoint: E,
     params?: ScraperParams<K, E>,
